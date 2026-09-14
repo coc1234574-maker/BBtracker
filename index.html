@@ -507,6 +507,74 @@
   .once-item-frame{font-size:12px;color:var(--ink-muted);white-space:nowrap;}
   .once-item-frame.urgent{color:var(--warn);font-weight:700;}
   .once-item.urgent{background:var(--warn-bg);border-radius:8px;border-bottom-color:transparent;margin-bottom:2px;}
+
+  .account-info-card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:12px 14px;
+    margin-bottom:14px;
+  }
+  .account-info-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:8px;
+  }
+  .account-info-name{
+    font-family:'Fraunces',Georgia,serif;
+    font-size:17px;
+    font-weight:600;
+  }
+  .account-info-lvl{
+    font-size:12px;
+    font-weight:700;
+    color:var(--accent-dark);
+    background:var(--pastel-mint-pale);
+    padding:4px 10px;
+    border-radius:999px;
+  }
+  .account-info-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:5px 0;
+    font-size:13px;
+  }
+  .account-info-label{
+    color:var(--ink-muted);
+    font-weight:600;
+    min-width:38px;
+  }
+  .account-info-value{
+    flex:1;
+    color:var(--ink);
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    font-family:ui-monospace,Menlo,monospace;
+    font-size:12.5px;
+  }
+
+  .copy-toast{
+    position:fixed;
+    left:50%;
+    transform:translateX(-50%);
+    bottom:calc(90px + env(safe-area-inset-bottom));
+    background:var(--ink);
+    color:#fff;
+    font-size:13px;
+    font-weight:600;
+    padding:9px 16px;
+    border-radius:999px;
+    box-shadow:var(--shadow-lift);
+    z-index:50;
+    animation:toast-in .15s ease-out;
+  }
+  @keyframes toast-in{
+    from{opacity:0;transform:translateX(-50%) translateY(6px);}
+    to{opacity:1;transform:translateX(-50%) translateY(0);}
+  }
 </style>
 </head>
 <body>
@@ -1168,6 +1236,50 @@ async function toggleEvent(id){
 
 function setTab(tab){ currentTab = tab; render(); }
 
+function showCopyToast(msg){
+  const existing = document.getElementById('copy-toast');
+  if(existing) existing.remove();
+  const div = document.createElement('div');
+  div.id = 'copy-toast';
+  div.className = 'copy-toast';
+  div.textContent = msg;
+  document.body.appendChild(div);
+  setTimeout(()=>{ div.remove(); }, 1500);
+}
+
+function copyText(text, label){
+  function fallbackCopy(){
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    try{ document.execCommand('copy'); }catch(e){}
+    document.body.removeChild(ta);
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(
+      () => showCopyToast(label+' copied'),
+      () => { fallbackCopy(); showCopyToast(label+' copied'); }
+    );
+  } else {
+    fallbackCopy();
+    showCopyToast(label+' copied');
+  }
+}
+
+function copyAccountField(field){
+  const acc = accounts.find(a=>a.uid===activeUid);
+  if(!acc) return;
+  if(field === 'uid'){
+    copyText(acc.uid, 'UID');
+  } else {
+    if(!acc.email){ showCopyToast('No email set for this account'); return; }
+    copyText(acc.email, 'Email');
+  }
+}
+
 /* ============================= RENDER ============================= */
 function escapeHtml(s){
   return (s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -1208,6 +1320,26 @@ function render(){
   </div>`;
 
   html += `<div class="content">`;
+
+  if(activeAccount){
+    html += `<div class="account-info-card">
+      <div class="account-info-top">
+        <div class="account-info-name">${escapeHtml(activeAccount.username)}</div>
+        <div class="account-info-lvl">Castle Lvl ${activeAccount.castleLevel||1}</div>
+      </div>
+      <div class="account-info-row">
+        <span class="account-info-label">UID</span>
+        <span class="account-info-value">${escapeHtml(activeAccount.uid)}</span>
+        <button class="link-btn" onclick="copyAccountField('uid')">Copy</button>
+      </div>
+      ${activeAccount.email ? `<div class="account-info-row">
+        <span class="account-info-label">Email</span>
+        <span class="account-info-value">${escapeHtml(activeAccount.email)}</span>
+        <button class="link-btn" onclick="copyAccountField('email')">Copy</button>
+      </div>` : ''}
+    </div>`;
+  }
+
   const filtered = events.filter(e => (currentTab==='all' || e.eventType===currentTab) && isEventApplicable(e, activeAccount ? activeAccount.castleLevel : 1));
 
   if(!filtered.length){
