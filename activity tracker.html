@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>Activity Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- PWA / Add to Home Screen support -->
+<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Activity%20Tracker%22%2C%22short_name%22%3A%22Activity%20Tracker%22%2C%22start_url%22%3A%22./%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23FCF8F9%22%2C%22theme_color%22%3A%22%23794B82%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage/png%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAAMAAAADACAIAAADdvvtQAAAEQ0lEQVR4nO3dPW7bQBCG4XGQ2/keOUEatW7S5AQ5bQoCAiHJErXf7M4P36c0AoTQvpidwDbzcfn8MmDUj%2BgHQG0EBAkBQUJAkBAQJAQECQFBQkCQEBAkBAQJAUFCQJAQECQEBAkBQUJAkBAQJAQECQFBQkCQEBAkBAQJAUFCQJAQECQEBAkBQUJAkBAQJAQECQFBQkCQEBAkBAQJAUFCQJAQECQEBAkBQUJAkBAQJAQECQFBQkCQEBAkBAQJAUFCQJAQECQEBMnP6AfAC5e/v26%2B8uf3v5AneeiD/zM1rft09pJkxBWW1PN6jvyBNQgoo4NxZGiIgNJ5K4vwhggol4EgYhsiIEgIKJHhWRI4hAgIEgLKInwdHkNAKRStxwgog7r1GAFBREDBXMZP4PfFCChS6ctrQ0BhvOqJ/bY8AcVoMHs2BFRb%2BE8FEVCAHpfXhoBWa3N5bQhoKcd6MowfI6CV%2BtVjBFRRnnqMgJbptDjvEdAKzRbnPQKaruXqc0VAc/Wuxwhoqvb1GAGVkLYeI6B5Gi/OewQ0xRkurw0B%2BTtPPUZA7k5VjxFQWiXqMQLydZLFeY%2BA3Jzt8toQkI9z1mME5OK09RgBpVKuHsv2mt/kr7R9qOsP%2BhyUJaDvjmH7etoP94T/7LqR4gqr8krbG2defa7iAyr0Sts96tkEB1TrlbYzlK7HYgMq90rbq5MvznvxV1g5SSJOIiygiq%2B09f3bG4wfKzqBohqinnslA7LoOSRqU4/VDciWN8Ti/FDhgFYqPfCmqh3QmnNl9XkiLCCvj3J2Q9TzXO0JtClxv7Ssx2IDcvxMJzXE4vxS8ATK/MmWGGzh4q%2BwnMsQq89B8QE58jp16jkuRUD5l6Ex7euxJAFZpoZYnN%2BSJSDL8YmnGmAlJArIohdqVp8BuQJy9G4N1DMmXUAhyxD1DEsXkFU%2Bg7pPPixjQLZ2GWJxViQNyFY1xOUlyhuQo%2Be/N%2B3inPVY8oCmLtTU4yJ1QFbhbPI/4VTZA7I5yxCLs5cCAZl3Q1xejmoE5Ih6fJUJKNtpZXueKGUCskxnludJwlUKyHKcXIZnyKNYQMimXkCxA4Dxc6NeQBZ3itRzr2RAFnGW1PNQ1YBs7YlSz3cKB4QMage0ZjAwfp6oHZDNP13qea58QDbzjKnnpQ4B2ZyTpp4jmgSEKH0C8h0YjJ%2BD%2BgRkfqdOPce1Csg8zp563tItINMKoJ53NQwIK/UMaGyQMH4G9AzI3q%2BBesZ8XD6/op9hriO/hkE9w9pOoKuXcVCPov8EurofRaSjO1FAmKH/FYapCAgSAoKEgCAhIEgICBICgoSAICEgSAgIEgKChIAgISBICAgSAoKEgCAhIEgICBICgoSAICEgSAgIEgKChIAgISBICAgSAoKEgCAhIEgICBICgoSAICEgSAgIEgKChIAgISBICAgSAoKEgCAhIEgICBICguQ/LvQ6bVKQmGgAAAAASUVORK5CYII%3D%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image/png%22%7D%2C%7B%22src%22%3A%22data%3Aimage/png%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAIAAAB7GkOtAAANiUlEQVR4nO3ZO3Lc1gJF0dYrz07z8AicMFXixCPwaF9Al0RJZLM/wP2cs1ZqlwqNBs6%2BXfzy8vXbBYA%2B/5t9AQDMIQAApQQAoJQAAJQSAIBSAgBQSgAASgkAQCkBACglAAClBACglAAAlBIAgFICAFBKAABKCQBAKQEAKCUAAKUEAKCUAACUEgCAUgIAUEoAAEoJAEApAQAoJQAApQQAoJQAAJQSAIBSAgBQSgAASgkAQCkBACglAAClBACglAAAlBIAgFICAFBKAABKCQBAKQEAKCUAAKUEAKCUAACUEgCAUgIAUEoAAEoJAEApAQAoJQAApQQAoJQAAJQSAIBSAgBQSgAASgkAQCkBACglAAClBACglAAAlBIAgFICAFBKAABKCQBAKQEAKCUAAKUEAKCUAACUEgCAUgIAUEoAAEoJAEApAQAoJQAApQQAoJQAAJQSAIBSAgBQSgAASgkAQCkBACglAAClBACglAAAlBIAgFICAFBKAABKCQBAKQEAKCUAAKUEAKCUAACUEgCAUgIAUEoAAEoJAEApAQAoJQAApQQAoJQAAJQSAIBSAgBQSgAASgkAQCkBACglAAClBACglAAAlBIAgFICAFBKAABKCQBAKQEAKCUAAKUEAKCUAACUEgCAUgIAUEoAAEoJAEApAQAoJQAApQQAoJQAAJQSAIBSAgBQSgAASgkAQCkBACglAAClBACglAAAlBIAgFICAFBKAABKCQBAKQEAKPXH7AsAkr388%2BeV//r3X/8OuxJ%2B9%2BXl67fZ1wBEuT76HxGD8QQAOMxj0/%2BWDIwkAMABnp/%2Bt2RgDH8EBp517Pqf8Q/yLr8AgMedvdR%2BCpzKLwDgQQPO6X4KnEoAgEcMm2YNOI8AAHcbPMoacBJ/AwDuMHGL/T3gcH4BALeaexL3O%2BBwAgDcxP7mEQBgGyJ0LAEAPrfO8q5zJQEEAPiEzU0lAMA1C67/gpe0KQEAPmRqswkAsB9lOoQAAO8zsvEEAHiH9W8gAMCvrH8JAQB%2Bssv673KdKxMAgFICAPzgWF1FAID/WP82AgBcLta/kgAA1r%2BUAACUEgBo5/hfSwCgmvVvJgDQy/qXEwBgS3//9e/sS9ieAEApx38EABpZfy4CAIWsP68EALpkrL8/ABxCAABKCQAUcfznLQGAFhnrz4EEACrErL/j/4EEAPJZf94lAAClBADCOf7zEQGAZNafKwQAYll/rhMAyGT9%2BZQAAOuy/qcSAAiUcfy3/mcTAEhj/bmRAECUjPVnDAGAHDHr7/g/hgAAa7H%2BwwgAhMg4/lv/kQQAElh/HiAAsL2M9Wc8AYC9xay/4/94AgDMZ/2nEADYWMbx3/rPIgCwK%2BvPkwQAtpSx/swlALCfmPV3/J9LAIA5rP90AgCbyTj%2BW/8VCADsJGP9WYQAwDZi1t/xfxECAHuw/hxOAIBxrP9SBAA2kHH8t/6rEQBYXcb6syABgKXFrL/j/4IEANZl/TmVAADnsv7LEgBYVMbx3/qvTABgRRnrz%2BIEAJYTs/6O/4sTAOAU1n99AgBryTj%2BW/8tCAAsxPozkgDAKjLWn40IACwhZv0d/zciAMBhrP9eBADmyzj%2BW//tCABMZv2ZRQBgpoz1Z1MCANPErL/j/6YEAHiK9d%2BXAMAcGcd/6781AYAJrD8rEAAYLWP9CSAAMFTM%2Bjv%2BBxAA4G7WP4MAwDgZx3/rH0MAYBDrz2oEAEbIWH/CCACcLmb9Hf/DCABwE%2BufRwDgXBnHf%2BsfSQDgRNaflQkAnCVj/QkmAHCKmPV3/A8mAMCHrH82AYDjZRz/rX%2B8P2ZfQLvrS%2BEN3JH1ZxcCMMHtA/H2//RCbiFj/Snx5eXrt9nXUOT5dZCBlcWsv8eshF8Agxw1Da//jveT83i6evgj8AiHHwxjTppJMr4U61/FL4BznTcKfgosJWP9aeMXwIkGjILdWUHMt%2BA80UYAzjJsFGLWZ1Mx99/6FxKAUwwehZgNYhbr30kAjjdljjVgiozbbv1rCcDBJi5CxhhtxA1ndwIAj4hZf8f/ZgJwpOmjMP0C2Iv1LycAh1lkfBe5jGwZN9n6IwBwH%2BtPDAE4xlKjsNTFhHFvSSIAmezUGWLuquM/rwTgAGvuwppXxXTWn%2B8EAG6SEVTrz1sCkCxjs1aQcSetP78QgHAZyzWXe0gqAXjW%2Buuw/hWuLObuOf7zOwGoELNiPMb68y4BgA9lhNP68xEBaJGxZSNl3DHrzxUCUCRj0cZwr2ggAF3s2i1i7pLjP9cJQJ2YdeM668%2BnBAB%2BkhFI688tBKBRxsadIePOWH9uJAClMpbuWO4JbQTgWfuetuzdWzF3Y98HkvEEoFrM6vHK%2BnMXAYCQEFp/7iUA7TK27xkZd8D68wABOMDu717GAj6m%2BbODAHC5tO5gzKfe/QjCLAJwjIA3MGYN2wQ8e8wiAPxQ1YCMD2v9eYYAHMaruBHrDxcBOFbAC5mxjNc1fEa4hQDwq%2Bx9jPl0AacNphOAg2W8ljErmSrjMWM6AThexssZ2YCMD5XxgLECATiFV3RBGesPBxKAswQ0IGkxYz5LwHPFOgTgRAHvasZuZnyKS8QTxVIE4FwBb2zMeu4u4FliNQJwuoD3dusGbH3x3wU8RSxIAEbw9s6Ssf5wEgHgJjsu6Y7X/C4HCE4iAIMEvMMxe7qXgCeHZQnAOAFv8kYN2OhSrwh4ZliZAAwV8D5vMaxbXOSnAp4WFicAo3mrz5ax/jCAAHC3lRd25Wu7i4MCAwjABAHvdszOringCWELAjBHwBu%2BYAMWvKQHBDwb7EIApgl4z5ca3KUu5mEBTwUbEYCZvO1HyVh/GEwAeMoKy7vCNRzCgYDBBGCygHc%2BZn/nCngS2I4AzBfw5k9sQEZ%2BAp4BdiQASwh4/6cMsfWHZwjAKqzAvTLWHyYSAA4zcpFj1l/4mUgAFhKwBTG7PEbAN87WBGAtAYswoAEZmQn4rtmdACwnYBdOHWjrD0cRgBVZh49krD8sQgAWtXsDzljqmPXf/cslhgBwlpi9Ppb1Zx0CsK6ApTiwARk5CfhOSSIASwvYi0OG2/rDGQRgdVYjY/1hQQKwgd0b8MyCx6z/7l8ikQSAEWJ2/DHWnzUJwB4CFuSBBmRkI%2BC7I5UAbCNgR%2B4adOsPZxOAnfSsScb6w%2BIEYDO7N%2BCWZY9Z/92/LOIJAKPF7Pt11p/1CcB%2BApblSgMy8hDwHdFAALYUsC/vDn3G%2BsMuBGBXAQ34Rcz65301pBKAje0%2BNG8X3/rDeALATDG7/8r6s5cvL1%2B/zb4GnhK2ofuy/mzHL4Dt2R3gMQKQQAOm8xWwIwEIYYAmcvPZlADAU6w/%2BxKAHJZoPPecrQlAFHsE3E4A0mjAMG41uxOAQIZpADeZAAIAd7P%2BZBCATBbqPO4tMQQglp0CrhOAZBpwOLeUJAIQzmAdyM0kjADATaw/eQQgn%2BV6nntIJAGoYL%2BA3wlACw14mFtHKgEoYsge4KYRTADgQ9afbALQxaLdzr0ingDUsWvAKwFopAGfcotoIAClDNwVbg4lBAB%2BYv3pIQC9LN3v3BOqCEA1ewfNBKCdBnznVtBGADB8l4ubQCUBAOtPKQHgculewObPTjkB4D92ENoIAD8UNqDwI8N3AsBPqgax6sPC7wSAX5XMYsnHhCsEgEbWHy4CwLvsIzQQAN4X3IDgjwZ3EQA%2BFDmUkR8KHiMAXBM2l2EfB54kAAClBIBPxJyaYz4IHEUA%2BFzAdAZ8BDicAHCTrQd064uH8wgAt9p0Rje9bBhAAABKCQB32O40vd0Fw0gCwH02mtSNLhWmEADutsWwbnGRMJcA8IjF53Xxy4NFCABAKQHgQcuespe9MFiNABDF%2BsPtBIDHrba2q10PLE4ACGH94V4CwFPMLuxLAHjWCg1Y4RpgOwLA9qw/PEYAOMDECbb%2B8DAB4BhThtj6wzMEgMMMnmPrD08SAI40bJStPzxPADjYgGm2/nCILy9fv82%2BBjK9/PPn4f%2Bm6YcD%2BQXAWQ4fa%2BsPx/ILgNM9/1PA9MMZBIBBHsuA6YfzCAATXI%2BB0YcxBACglD8CA5QSAIBSAgBQSgAASgkAQCkBACglAAClBACglAAAlBIAgFICAFBKAABKCQBAKQEAKCUAAKUEAKCUAACUEgCAUgIAUEoAAEoJAEApAQAoJQAApQQAoJQAAJQSAIBSAgBQSgAASgkAQCkBACglAAClBACglAAAlBIAgFICAFBKAABKCQBAKQEAKCUAAKUEAKCUAACUEgCAUgIAUEoAAEoJAEApAQAoJQAApQQAoJQAAJQSAIBSAgBQSgAASgkAQCkBACglAAClBACglAAAlBIAgFICAFBKAABKCQBAKQEAKCUAAKUEAKCUAACUEgCAUgIAUEoAAEoJAEApAQAoJQAApQQAoJQAAJQSAIBSAgBQSgAASgkAQCkBACglAAClBACglAAAlBIAgFICAFBKAABKCQBAKQEAKCUAAKUEAKCUAACUEgCAUgIAUEoAAEoJAEApAQAoJQAApQQAoJQAAJQSAIBSAgBQSgAASgkAQCkBACglAAClBACglAAAlBIAgFICAFBKAABKCQBAKQEAKCUAAKUEAKCUAACUEgCAUgIAUEoAAEr9H6XYOC8d9P2HAAAAAElFTkSuQmCC%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image/png%22%7D%5D%7D">
+<meta name="theme-color" content="#794B82">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Activity Tracker">
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAAD50lEQVR4nO3dTW7bMBRF4Zeiu8s+uoJMMu0kk6wgq+2AhSHYvrIlk3w/PN+sQIDK4vGj4Cjy2+f7XwPu+eV9AIiLOCARByTigEQckIgDEnFAIg5IxAGJOCARByTigEQckIgDEnFAIg5IxAGJOCARByTigEQckIgDEnFAIg5IxAGJOCARByTigEQckIgDEnFAIg5IxAGJOCARByTigEQckIgDEnFAIg5IxAGJOCARByTigEQckIgDEnFA+u19APjv8/vP9p9fHz9eR3LxxpfxuLvKYss3EeLwtJPFllciXHO4ebKMQz/ZF3FAIg4fR4eBy/AgDgde28RRxJHG/KSIY7YsY8OIY7JEZRhxzJSrDCOOadKVYcSRyPzPSYljhoxjw4hjgi5luPx6hTjGSjozGuIYqFcZXr+V5Waf0Hzv52ByjJJ6Q2mIY4i8F6FbxNFfjTKMOLorU4YRR0BByjDi6KvARegWcXRTaUNpiKOPemUYcXRRsgwjjtdVLcOIAzuI4yWFx4YRxytql2HEcVr5Mow4zlmhDCMOL/HLMOI4odhn5DuI45hFNpQmxG2CAR+HdddSZZj7Y5/CPg7r1mplmOPkeHiu2w/kOpv70r0Wn2uO+I/DuhLkMCbjgvSxBTeUxiGOFI/D6vu/ZyzDskwOrz5WLsPmx7Ha5p23DMsyOcyjqtU6vpUmDpu7WotvKE2mOGxWH5TRJIvDxvdBGRez46hx1vaVeY35JoeNHB5chG45xNHljTViFdlQrqScHE3fPijjlk8cvU5irz4o4y63yfH18VPpbFZ6LReJt5Xm9Tc9F6GKcxzuF6dsKDv8J4djH5Sxzz8Oc+qDMh4KEYflPMsZj/mQKHF0ke7W1OACxTFtc2FDeVKgOGxKH5TxvFhx2OA+KOOQcHHYsD4o46iIcSCIoHF0Hx6MjROCxmFd+6CMc5z/yv6hIB9ILFiGRZ4cTYRViXAMLqLHYd5rs2wZliIOeMkRh9fbd+WxYVniMI91WrwMSxSHzV0tyrBccdisNaOMJlkcmClfHKPf1oyNi3xx2Mj1o4ytlHHYmFWkjCtZ47Dea0kZtxLHgdFyx9Hr7c7YuCt3HNZjXSlDSR+Hvba6lLGjQhx2do0pY1+RODBCnTiOjgHGxkN14kB3peJ4fhgwNp4R/e7zcxJ9dVxkNeNosnzpZFiV48CLSl1zoC/igEQckIgDEnFAIg5IxAGJOCARByTigEQckIgDEnFAIg5IxAGJOCARByTigEQckIgDEnFAIg5IxAGJOCARByTigEQckIgDEnFAIg5IxAGJOCARByTigEQckIgDEnFAIg5IxAGJOCD9A4GiJnqNFuMKAAAAAElFTkSuQmCC">
+<link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAIAAADdvvtQAAAEQ0lEQVR4nO3dPW7bQBCG4XGQ2/keOUEatW7S5AQ5bQoCAiHJErXf7M4P36c0AoTQvpidwDbzcfn8MmDUj+gHQG0EBAkBQUJAkBAQJAQECQFBQkCQEBAkBAQJAUFCQJAQECQEBAkBQUJAkBAQJAQECQFBQkCQEBAkBAQJAUFCQJAQECQEBAkBQUJAkBAQJAQECQFBQkCQEBAkBAQJAUFCQJAQECQEBAkBQUJAkBAQJAQECQFBQkCQEBAkBAQJAUFCQJAQECQEBMnP6AfAC5e/v26+8uf3v5AneeiD/zM1rft09pJkxBWW1PN6jvyBNQgoo4NxZGiIgNJ5K4vwhggol4EgYhsiIEgIKJHhWRI4hAgIEgLKInwdHkNAKRStxwgog7r1GAFBREDBXMZP4PfFCChS6ctrQ0BhvOqJ/bY8AcVoMHs2BFRb+E8FEVCAHpfXhoBWa3N5bQhoKcd6MowfI6CV+tVjBFRRnnqMgJbptDjvEdAKzRbnPQKaruXqc0VAc/Wuxwhoqvb1GAGVkLYeI6B5Gi/OewQ0xRkurw0B+TtPPUZA7k5VjxFQWiXqMQLydZLFeY+A3Jzt8toQkI9z1mME5OK09RgBpVKuHsv2mt/kr7R9qOsP+hyUJaDvjmH7etoP94T/7LqR4gqr8krbG2defa7iAyr0Sts96tkEB1TrlbYzlK7HYgMq90rbq5MvznvxV1g5SSJOIiygiq+09f3bG4wfKzqBohqinnslA7LoOSRqU4/VDciWN8Ti/FDhgFYqPfCmqh3QmnNl9XkiLCCvj3J2Q9TzXO0JtClxv7Ssx2IDcvxMJzXE4vxS8ATK/MmWGGzh4q+wnMsQq89B8QE58jp16jkuRUD5l6Ex7euxJAFZpoZYnN+SJSDL8YmnGmAlJArIohdqVp8BuQJy9G4N1DMmXUAhyxD1DEsXkFU+g7pPPixjQLZ2GWJxViQNyFY1xOUlyhuQo+e/N+3inPVY8oCmLtTU4yJ1QFbhbPI/4VTZA7I5yxCLs5cCAZl3Q1xejmoE5Ih6fJUJKNtpZXueKGUCskxnludJwlUKyHKcXIZnyKNYQMimXkCxA4Dxc6NeQBZ3itRzr2RAFnGW1PNQ1YBs7YlSz3cKB4QMage0ZjAwfp6oHZDNP13qea58QDbzjKnnpQ4B2ZyTpp4jmgSEKH0C8h0YjJ+D+gRkfqdOPce1Csg8zp563tItINMKoJ53NQwIK/UMaGyQMH4G9AzI3q+BesZ8XD6/op9hriO/hkE9w9pOoKuXcVCPov8EurofRaSjO1FAmKH/FYapCAgSAoKEgCAhIEgICBICgoSAICEgSAgIEgKChIAgISBICAgSAoKEgCAhIEgICBICgoSAICEgSAgIEgKChIAgISBICAgSAoKEgCAhIEgICBICgoSAICEgSAgIEgKChIAgISBICAgSAoKEgCAhIEgICBICguQ/LvQ6bVKQmGgAAAAASUVORK5CYII=">
+<style>
+  :root{
+    --bg:#FCF8F9;
+    --surface:#FFFFFF;
+    --border:#F5CFD7;
+    --border-strong:#BE8DB5;
+    --ink:#291D2B;
+    --ink-muted:#584B5A;
+    --accent:#794B82;
+    --accent-dark:#523358;
+    --accent-contrast:#FFFFFF;
+    --done:#A45696;
+    --done-bg:#F2D7E8;
+    --danger:#B23A55;
+    --danger-bg:#F7DFE3;
+    --pastel-blush:#FAE7EB;
+    --pastel-orchid:#F2D7E8;
+    --pastel-mint-pale:#ECF8F7;
+    --pastel-mauve:#B58EBC;
+    --pastel-mint:#D1EDEA;
+    --pastel-lilac:#D8BBD3;
+    --warn:#C9793E;
+    --warn-bg:#FBEADF;
+    --radius:12px;
+    --radius-sm:8px;
+    --shadow:0 2px 10px rgba(41,29,43,0.10);
+    --shadow-lift:0 8px 28px rgba(41,29,43,0.20);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    padding-bottom:calc(90px + env(safe-area-inset-bottom));
+    -webkit-tap-highlight-color:transparent;
+  }
+  h1,h2,h3{
+    font-family:'Fraunces',Georgia,serif;
+    font-weight:600;
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+  button{
+    font-family:inherit;
+    cursor:pointer;
+    border:none;
+    background:none;
+  }
+  input,select{
+    font-family:inherit;
+    font-size:15px;
+  }
+  ::-webkit-scrollbar{width:0;height:0;}
+
+  /* ---------- Header ---------- */
+  .topbar{
+    background:var(--accent);
+    color:var(--accent-contrast);
+    padding:calc(16px + env(safe-area-inset-top)) 16px 14px;
+    position:sticky;
+    top:0;
+    z-index:20;
+  }
+  .topbar-title{
+    font-size:20px;
+    color:#fff;
+    margin-bottom:12px;
+  }
+  .account-row{
+    display:flex;
+    gap:8px;
+    align-items:center;
+  }
+  .account-select{
+    flex:1;
+    background:rgba(255,255,255,0.14);
+    color:#fff;
+    border:1px solid rgba(255,255,255,0.35);
+    border-radius:var(--radius-sm);
+    padding:9px 10px;
+    font-size:14px;
+    font-weight:500;
+    appearance:none;
+    -webkit-appearance:none;
+  }
+  .account-select option{color:#111;}
+  .icon-btn{
+    background:rgba(255,255,255,0.14);
+    border:1px solid rgba(255,255,255,0.35);
+    color:#fff;
+    border-radius:var(--radius-sm);
+    padding:9px 12px;
+    font-size:13px;
+    font-weight:600;
+    white-space:nowrap;
+  }
+  .icon-btn:active{background:rgba(255,255,255,0.28);}
+
+  /* ---------- Tabs ---------- */
+  .tabs{
+    display:flex;
+    gap:6px;
+    padding:12px 16px 4px;
+    overflow-x:auto;
+  }
+  .tab{
+    padding:8px 14px;
+    border-radius:999px;
+    font-size:13px;
+    font-weight:600;
+    color:var(--ink-muted);
+    background:var(--surface);
+    border:1px solid var(--border);
+    white-space:nowrap;
+  }
+  .tab.active{
+    background:var(--accent);
+    color:#fff;
+    border-color:var(--accent);
+  }
+
+  /* ---------- Content ---------- */
+  .content{
+    padding:8px 16px 24px;
+    max-width:640px;
+    margin:0 auto;
+  }
+  .section-label{
+    font-size:12px;
+    font-weight:700;
+    color:var(--ink-muted);
+    margin:18px 2px 8px;
+  }
+  .empty-state{
+    text-align:center;
+    padding:48px 20px;
+    color:var(--ink-muted);
+  }
+  .empty-state h2{
+    font-size:19px;
+    color:var(--ink);
+    margin-bottom:6px;
+  }
+  .empty-state p{
+    font-size:14px;
+    line-height:1.5;
+    margin:0 0 16px;
+  }
+
+  /* ---------- Event card ---------- */
+  .event-card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:12px 14px;
+    margin-bottom:10px;
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+  }
+  .checkbox{
+    width:26px;
+    height:26px;
+    min-width:26px;
+    border-radius:7px;
+    border:2px solid var(--border-strong);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin-top:1px;
+    transition:background .15s, border-color .15s;
+  }
+  .checkbox.checked{
+    background:var(--done);
+    border-color:var(--done);
+  }
+  .checkbox svg{width:15px;height:15px;display:none;}
+  .checkbox.checked svg{display:block;}
+  .event-info{flex:1;min-width:0;}
+  .event-name{
+    font-size:15px;
+    font-weight:600;
+    line-height:1.35;
+  }
+  .event-name.checked{
+    color:var(--ink-muted);
+    text-decoration:line-through;
+    text-decoration-color:var(--border-strong);
+  }
+  .event-meta{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-top:6px;
+  }
+  .badge{
+    font-size:11px;
+    font-weight:600;
+    padding:3px 8px;
+    border-radius:999px;
+    background:var(--bg);
+    color:var(--ink-muted);
+    border:1px solid var(--border);
+  }
+  .badge.type-daily{background:var(--pastel-mint-pale);color:#09615A;border-color:transparent;}
+  .badge.type-weekly{background:var(--pastel-orchid);color:#891C60;border-color:transparent;}
+  .badge.type-special{background:var(--pastel-lilac);color:#5B2E53;border-color:transparent;}
+  .badge.urgent{background:var(--warn-bg);color:var(--warn);font-weight:700;}
+  .event-card.urgent{border-color:var(--warn);background:var(--warn-bg);}
+  .delete-x{
+    color:var(--ink-muted);
+    font-size:18px;
+    padding:4px 6px;
+    line-height:1;
+    margin-top:-2px;
+  }
+  .delete-x:active{color:var(--danger);}
+
+  /* ---------- FAB ---------- */
+  .fab{
+    position:fixed;
+    right:20px;
+    bottom:calc(24px + env(safe-area-inset-bottom));
+    width:56px;
+    height:56px;
+    border-radius:50%;
+    background:var(--accent);
+    color:#fff;
+    font-size:28px;
+    box-shadow:var(--shadow-lift);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:15;
+  }
+  .fab:active{background:var(--accent-dark);}
+
+  /* ---------- Modal / bottom sheet ---------- */
+  .overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(20,26,20,0.45);
+    z-index:30;
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+  }
+  .sheet{
+    background:var(--bg);
+    width:100%;
+    max-width:640px;
+    max-height:88vh;
+    overflow-y:auto;
+    border-radius:18px 18px 0 0;
+    padding:18px 18px calc(28px + env(safe-area-inset-bottom));
+    animation:slideup .18s ease-out;
+  }
+  @keyframes slideup{
+    from{transform:translateY(24px);opacity:0;}
+    to{transform:translateY(0);opacity:1;}
+  }
+  .sheet-handle{
+    width:36px;height:4px;background:var(--border-strong);
+    border-radius:99px;margin:0 auto 14px;
+  }
+  .sheet-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:16px;
+  }
+  .sheet-close{
+    font-size:14px;
+    font-weight:600;
+    color:var(--ink-muted);
+    padding:6px 4px;
+  }
+
+  .field{margin-bottom:14px;}
+  .field label{
+    display:block;
+    font-size:12px;
+    font-weight:700;
+    color:var(--ink-muted);
+    margin-bottom:6px;
+  }
+  .field input[type=text],
+  .field input[type=email],
+  .field input[type=date],
+  .field select{
+    width:100%;
+    padding:11px 12px;
+    border-radius:var(--radius-sm);
+    border:1px solid var(--border-strong);
+    background:var(--surface);
+    color:var(--ink);
+  }
+  .field input:disabled,.field select:disabled{
+    background:var(--border);
+    color:var(--ink-muted);
+  }
+  .field-row{display:flex;gap:10px;}
+  .field-row .field{flex:1;}
+  .hint{font-size:12px;color:var(--ink-muted);margin-top:4px;}
+
+  .btn{
+    width:100%;
+    padding:13px;
+    border-radius:var(--radius-sm);
+    font-weight:700;
+    font-size:15px;
+    text-align:center;
+  }
+  .btn-primary{background:var(--accent);color:#fff;}
+  .btn-primary:active{background:var(--accent-dark);}
+  .btn-secondary{background:var(--surface);color:var(--ink);border:1px solid var(--border-strong);}
+  .btn-danger-outline{background:var(--danger-bg);color:var(--danger);}
+  .btn-row{display:flex;gap:8px;margin-top:6px;}
+  .btn-row .btn{width:auto;flex:1;}
+
+  .divider{height:1px;background:var(--border);margin:20px 0;}
+
+  /* account list in manage modal */
+  .account-item{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:12px 14px;
+    margin-bottom:10px;
+  }
+  .account-item-top{
+    display:flex;justify-content:space-between;align-items:flex-start;gap:10px;
+  }
+  .account-name{font-weight:600;font-size:15px;}
+  .account-sub{font-size:12.5px;color:var(--ink-muted);margin-top:2px;}
+  .account-actions{display:flex;gap:6px;}
+  .link-btn{
+    font-size:12.5px;font-weight:700;color:var(--accent-dark);
+    padding:5px 8px;border-radius:6px;background:var(--pastel-orchid);
+  }
+  .link-btn.danger{color:var(--danger);background:var(--danger-bg);}
+
+  .upload-box{
+    border:1.5px dashed var(--border-strong);
+    border-radius:var(--radius);
+    padding:18px;
+    text-align:center;
+    background:var(--surface);
+  }
+  .upload-box input[type=file]{display:none;}
+  .upload-label{
+    display:inline-block;
+    font-size:13px;
+    font-weight:700;
+    color:var(--accent-dark);
+  }
+  .csv-format{
+    font-size:11.5px;
+    color:var(--ink-muted);
+    margin-top:8px;
+    font-family:ui-monospace,Menlo,monospace;
+  }
+
+  .install-tip{
+    position:fixed;
+    left:12px;
+    right:12px;
+    bottom:calc(12px + env(safe-area-inset-bottom));
+    background:var(--ink);
+    color:#fff;
+    border-radius:var(--radius);
+    padding:12px 14px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    box-shadow:var(--shadow-lift);
+    z-index:40;
+    font-size:13px;
+    line-height:1.4;
+  }
+  .install-tip b{font-weight:700;}
+  .install-tip .tip-close{
+    color:rgba(255,255,255,0.7);
+    font-size:18px;
+    padding:2px 4px;
+    margin-left:auto;
+  }
+
+  /* ---------- Dashboard ---------- */
+  .dash-hero{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:18px;
+    margin-bottom:16px;
+    text-align:center;
+  }
+  .dash-hero-name{
+    font-size:12.5px;
+    font-weight:700;
+    color:var(--ink-muted);
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+  }
+  .dash-hero-pct{
+    font-family:'Fraunces',Georgia,serif;
+    font-size:44px;
+    font-weight:600;
+    color:var(--accent);
+    line-height:1.15;
+    margin:4px 0 2px;
+  }
+  .dash-hero-sub{
+    font-size:13px;
+    color:var(--ink-muted);
+  }
+  .dash-complete-tag{
+    display:inline-block;
+    margin-top:10px;
+    font-size:12px;
+    font-weight:700;
+    color:var(--accent-dark);
+    background:var(--pastel-mint-pale);
+    padding:5px 12px;
+    border-radius:999px;
+  }
+  .stat-row{margin-bottom:14px;}
+  .stat-row-top{
+    display:flex;
+    justify-content:space-between;
+    font-size:13px;
+    font-weight:600;
+    margin-bottom:6px;
+  }
+  .stat-row-top span:last-child{color:var(--ink-muted);font-weight:500;}
+  .bar{
+    height:9px;
+    background:var(--border);
+    border-radius:99px;
+    overflow:hidden;
+  }
+  .bar-fill{
+    height:100%;
+    background:var(--accent);
+    border-radius:99px;
+    transition:width .2s ease;
+  }
+  .account-stat-row{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:12px 14px;
+    margin-bottom:10px;
+  }
+  .account-stat-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:8px;
+  }
+  .account-stat-name{font-size:14px;font-weight:600;}
+  .account-stat-name .you-tag{
+    font-size:11px;font-weight:700;color:var(--accent-dark);
+    margin-left:6px;
+  }
+  .account-stat-pct{font-size:14px;font-weight:700;color:var(--ink-muted);}
+  .account-stat-pct.full{color:var(--accent-dark);}
+
+  .once-item{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:8px 4px;
+    border-bottom:1px solid var(--border);
+    font-size:13.5px;
+  }
+  .once-item:last-child{border-bottom:none;}
+  .once-item-dot{
+    width:8px;height:8px;min-width:8px;
+    border-radius:50%;
+    background:var(--border-strong);
+  }
+  .once-item-dot.done{background:var(--done);}
+  .once-item-name{flex:1;font-weight:500;}
+  .once-item-name.done{color:var(--ink-muted);text-decoration:line-through;text-decoration-color:var(--border-strong);}
+  .once-item-frame{font-size:12px;color:var(--ink-muted);white-space:nowrap;}
+  .once-item-frame.urgent{color:var(--warn);font-weight:700;}
+  .once-item.urgent{background:var(--warn-bg);border-radius:8px;border-bottom-color:transparent;margin-bottom:2px;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ============================= STATE ============================= */
+let accounts = [];
+let events = [];
+let activeUid = null;
+let progress = {};
+let currentTab = 'all';
+let editingUid = null; // account currently in edit mode within manage sheet
+let modal = null; // null | 'accounts' | 'event'
+
+/* ============================= STORAGE HELPERS ============================= */
+function storeGet(key, fallback){
+  try{
+    const raw = localStorage.getItem(key);
+    if(raw === null || raw === undefined) return fallback;
+    return JSON.parse(raw);
+  }catch(e){ console.error('storage get failed', key, e); return fallback; }
+}
+function storeSet(key, value){
+  try{ localStorage.setItem(key, JSON.stringify(value)); }
+  catch(e){ console.error('storage set failed', key, e); alert('Could not save data — your browser storage may be full or disabled for this page.'); }
+}
+function storeDelete(key){
+  try{ localStorage.removeItem(key); }catch(e){}
+}
+
+/* ============================= DATE / RESET LOGIC ============================= */
+// "logical day" boundary at 2AM UTC
+function logicalDayKey(date){
+  const shifted = new Date(date.getTime() - 2*60*60*1000);
+  return shifted.toISOString().slice(0,10);
+}
+// "logical week" boundary Monday 2AM UTC
+function logicalWeekKey(date){
+  const shifted = new Date(date.getTime() - 2*60*60*1000);
+  const day = shifted.getUTCDay(); // 0 Sun .. 6 Sat
+  const diffToMonday = (day === 0 ? -6 : 1 - day);
+  const monday = new Date(shifted);
+  monday.setUTCDate(shifted.getUTCDate() + diffToMonday);
+  return monday.toISOString().slice(0,10);
+}
+function computePeriodKey(ev){
+  const now = new Date();
+  if(ev.tracking === 'daily') return 'd:'+logicalDayKey(now);
+  // once
+  if(ev.eventType === 'weekly') return 'w:'+logicalWeekKey(now);
+  return 'once';
+}
+function isExpiredSpecial(ev, now){
+  if(ev.eventType !== 'special' || !ev.dateTo) return false;
+  const currentLogicalDay = logicalDayKey(now);
+  const dateTo = new Date(ev.dateTo+'T00:00:00Z');
+  const cutoff = new Date(dateTo.getTime() + 24*60*60*1000);
+  const cutoffDayStr = cutoff.toISOString().slice(0,10);
+  return currentLogicalDay >= cutoffDayStr;
+}
+function daysLeft(dateToStr){
+  const now = new Date();
+  const dateTo = new Date(dateToStr+'T23:59:59Z');
+  const diff = dateTo.getTime() - now.getTime();
+  return Math.max(0, Math.ceil(diff / (24*60*60*1000)));
+}
+
+function nextDailyResetUTC(now){
+  const y = now.getUTCFullYear(), m = now.getUTCMonth(), d = now.getUTCDate();
+  let reset = new Date(Date.UTC(y,m,d,2,0,0));
+  if(reset.getTime() <= now.getTime()) reset = new Date(reset.getTime() + 24*60*60*1000);
+  return reset;
+}
+function nextWeeklyResetUTC(now){
+  let d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 2, 0, 0));
+  while(d.getUTCDay() !== 1 || d.getTime() <= now.getTime()){
+    d = new Date(d.getTime() + 24*60*60*1000);
+  }
+  return d;
+}
+function formatDuration(ms){
+  if(ms <= 0) return 'now';
+  const totalMin = Math.floor(ms/60000);
+  const days = Math.floor(totalMin/1440);
+  const hours = Math.floor((totalMin%1440)/60);
+  const mins = totalMin%60;
+  if(days > 0) return days+'d '+hours+'h';
+  if(hours > 0) return hours+'h '+mins+'m';
+  return mins+'m';
+}
+// Returns { label, remainingMs, urgent } describing when this activity's current window closes
+function formatUtc8Time(date){
+  const shifted = new Date(date.getTime() + 8*60*60*1000);
+  let h = shifted.getUTCHours();
+  const m = shifted.getUTCMinutes();
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12; if(h === 0) h = 12;
+  return h+':'+String(m).padStart(2,'0')+' '+ampm;
+}
+function formatUtc8Weekday(date){
+  const shifted = new Date(date.getTime() + 8*60*60*1000);
+  return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][shifted.getUTCDay()];
+}
+function eventDeadlineInfo(ev){
+  const now = new Date();
+  if(ev.tracking === 'daily'){
+    const reset = nextDailyResetUTC(now);
+    const remaining = reset - now;
+    return {label: 'Resets '+formatUtc8Time(reset)+' (UTC+8) · in '+formatDuration(remaining), remainingMs: remaining, urgent: remaining <= 3*60*60*1000};
+  }
+  if(ev.eventType === 'weekly'){
+    const reset = nextWeeklyResetUTC(now);
+    const remaining = reset - now;
+    return {label: 'Resets '+formatUtc8Weekday(reset)+' '+formatUtc8Time(reset)+' (UTC+8) · in '+formatDuration(remaining), remainingMs: remaining, urgent: remaining <= 24*60*60*1000};
+  }
+  const dl = daysLeft(ev.dateTo);
+  return {label: dl<=0 ? 'Last day' : dl+' day'+(dl===1?'':'s')+' left', remainingMs: dl*24*60*60*1000, urgent: dl<=1};
+}
+
+async function cleanupExpiredSpecialEvents(){
+  const now = new Date();
+  const expired = events.filter(e => isExpiredSpecial(e, now));
+  if(!expired.length) return;
+  const expiredIds = new Set(expired.map(e=>e.id));
+  events = events.filter(e => !expiredIds.has(e.id));
+  await storeSet('events', events);
+  for(const acc of accounts){
+    const p = await storeGet('progress:'+acc.uid, {});
+    let changed = false;
+    for(const id of expiredIds){ if(p[id] !== undefined){ delete p[id]; changed = true; } }
+    if(changed) await storeSet('progress:'+acc.uid, p);
+  }
+  if(activeUid){ progress = await storeGet('progress:'+activeUid, {}); }
+}
+
+function genId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+/* ============================= INIT ============================= */
+async function init(){
+  accounts = await storeGet('accounts', []);
+  events = await storeGet('events', []);
+  activeUid = await storeGet('activeAccount', null);
+  await cleanupExpiredSpecialEvents();
+  if(activeUid && !accounts.find(a=>a.uid===activeUid)) activeUid = null;
+  if(!activeUid && accounts.length) activeUid = accounts[0].uid;
+  if(activeUid){
+    progress = await storeGet('progress:'+activeUid, {});
+    await storeSet('activeAccount', activeUid);
+  }
+  render();
+  maybeShowInstallTip();
+}
+
+/* ============================= ACTIONS: ACCOUNTS ============================= */
+async function switchAccount(uid){
+  activeUid = uid || null;
+  await storeSet('activeAccount', activeUid);
+  progress = activeUid ? await storeGet('progress:'+activeUid, {}) : {};
+  render();
+}
+
+async function addAccountManual(){
+  const username = document.getElementById('new-acc-username').value.trim();
+  const email = document.getElementById('new-acc-email').value.trim();
+  const uid = document.getElementById('new-acc-uid').value.trim();
+  const castleLevel = parseInt(document.getElementById('new-acc-castle').value, 10) || 1;
+  if(!username || !uid){ alert('Username and UID are required.'); return; }
+  if(accounts.find(a=>a.uid===uid)){ alert('An account with this UID already exists.'); return; }
+  accounts.push({username, email, uid, castleLevel});
+  await storeSet('accounts', accounts);
+  await storeSet('progress:'+uid, {});
+  document.getElementById('new-acc-username').value = '';
+  document.getElementById('new-acc-email').value = '';
+  document.getElementById('new-acc-uid').value = '';
+  document.getElementById('new-acc-castle').value = '1';
+  if(!activeUid) await switchAccount(uid); else render();
+}
+
+function startEditAccount(uid){ editingUid = uid; render(); }
+function cancelEditAccount(){ editingUid = null; render(); }
+
+async function saveEditAccount(oldUid){
+  const username = document.getElementById('edit-acc-username').value.trim();
+  const email = document.getElementById('edit-acc-email').value.trim();
+  const newUid = document.getElementById('edit-acc-uid').value.trim();
+  const castleLevel = parseInt(document.getElementById('edit-acc-castle').value, 10) || 1;
+  if(!username || !newUid){ alert('Username and UID are required.'); return; }
+  if(newUid !== oldUid && accounts.find(a=>a.uid===newUid)){
+    alert('An account with this UID already exists.'); return;
+  }
+  const acc = accounts.find(a=>a.uid===oldUid);
+  acc.username = username; acc.email = email; acc.castleLevel = castleLevel;
+  if(newUid !== oldUid){
+    const oldProgress = await storeGet('progress:'+oldUid, {});
+    await storeDelete('progress:'+oldUid);
+    await storeSet('progress:'+newUid, oldProgress);
+    acc.uid = newUid;
+    if(activeUid === oldUid){
+      activeUid = newUid;
+      await storeSet('activeAccount', activeUid);
+      progress = oldProgress;
+    }
+  }
+  await storeSet('accounts', accounts);
+  editingUid = null;
+  render();
+}
+
+async function deleteAccount(uid){
+  if(!confirm('Delete this account? Its saved progress will be removed.')) return;
+  accounts = accounts.filter(a=>a.uid!==uid);
+  await storeSet('accounts', accounts);
+  await storeDelete('progress:'+uid);
+  if(activeUid === uid){
+    activeUid = accounts.length ? accounts[0].uid : null;
+    await storeSet('activeAccount', activeUid);
+    progress = activeUid ? await storeGet('progress:'+activeUid, {}) : {};
+  }
+  render();
+}
+
+let xlsxLoadPromise = null;
+function loadXlsxLibrary(){
+  if(window.XLSX) return Promise.resolve();
+  if(xlsxLoadPromise) return xlsxLoadPromise;
+  xlsxLoadPromise = new Promise((resolve, reject)=>{
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    script.crossOrigin = 'anonymous';
+    script.onload = () => window.XLSX ? resolve() : reject(new Error('Library loaded but did not initialize.'));
+    script.onerror = () => reject(new Error('Could not load the Excel library. Check your internet connection.'));
+    document.head.appendChild(script);
+  });
+  return xlsxLoadPromise;
+}
+
+function handleFileUpload(input){
+  const file = input.files[0];
+  if(!file) return;
+  const name = file.name.toLowerCase();
+  if(name.endsWith('.xlsx') || name.endsWith('.xls')){
+    handleXlsxUpload(file, input);
+  }else{
+    handleCsvUpload(file, input);
+  }
+}
+
+async function importRows(rows){
+  // rows: array of {username, email, uid} (already trimmed strings)
+  let added = 0, updated = 0, skipped = 0;
+  for(const row of rows){
+    const username = (row.username||'').trim();
+    const email = (row.email||'').trim();
+    const uid = (row.uid||'').trim();
+    const castleLevel = parseInt(row.castleLevel, 10) || 1;
+    if(!username || !uid){ skipped++; continue; }
+    const existing = accounts.find(a=>a.uid===uid);
+    if(existing){ existing.username = username; existing.email = email || existing.email; existing.castleLevel = castleLevel; updated++; }
+    else{ accounts.push({username, email, uid, castleLevel}); await storeSet('progress:'+uid, {}); added++; }
+  }
+  await storeSet('accounts', accounts);
+  if(!activeUid && accounts.length) await switchAccount(accounts[0].uid); else render();
+  alert('Import complete — '+added+' added, '+updated+' updated'+(skipped?(', '+skipped+' skipped (missing data)'):'')+'.');
+}
+
+function handleCsvUpload(file, input){
+  const reader = new FileReader();
+  reader.onload = async function(e){
+    const text = e.target.result;
+    const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(l=>l.length);
+    if(!lines.length){ alert('The file appears to be empty.'); return; }
+    let start = 0;
+    if(/username/i.test(lines[0]) && /uid/i.test(lines[0])) start = 1;
+    const rows = [];
+    for(let i=start;i<lines.length;i++){
+      const parts = lines[i].split(',').map(p=>p.trim().replace(/^"|"$/g,''));
+      rows.push({username: parts[0], email: parts[1], uid: parts[2], castleLevel: parts[3]});
+    }
+    await importRows(rows);
+    input.value = '';
+  };
+  reader.readAsText(file);
+}
+
+async function handleXlsxUpload(file, input){
+  try{
+    await loadXlsxLibrary();
+  }catch(err){
+    console.error(err);
+    alert('Could not load Excel support (needs an internet connection the first time). You can still import a .csv file instead.');
+    input.value = '';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = async function(e){
+    try{
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, {type:'array'});
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const grid = XLSX.utils.sheet_to_json(sheet, {header:1, raw:false, defval:''});
+      if(!grid.length){ alert('The spreadsheet appears to be empty.'); return; }
+      let start = 0;
+      const firstRow = grid[0].map(c=>String(c).toLowerCase());
+      if(firstRow.some(c=>c.includes('username')) && firstRow.some(c=>c.includes('uid'))) start = 1;
+      const rows = [];
+      for(let i=start;i<grid.length;i++){
+        const r = grid[i];
+        if(!r || !r.length) continue;
+        rows.push({username: String(r[0]||'').trim(), email: String(r[1]||'').trim(), uid: String(r[2]||'').trim(), castleLevel: String(r[3]||'').trim()});
+      }
+      await importRows(rows);
+    }catch(err){
+      console.error(err);
+      alert('Could not read that Excel file. Please check the format and try again.');
+    }
+    input.value = '';
+  };
+  reader.onerror = function(){
+    alert('Could not read that file.');
+    input.value = '';
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+/* ============================= ACTIONS: EVENTS ============================= */
+function openEventModal(){ modal = 'event'; render(); }
+function closeModal(){ modal = null; editingUid = null; render(); }
+function openAccountsModal(){ modal = 'accounts'; render(); }
+
+let dashboardAllProgress = {};
+async function openDashboardModal(){
+  dashboardAllProgress = {};
+  for(const acc of accounts){
+    dashboardAllProgress[acc.uid] = (acc.uid === activeUid) ? progress : await storeGet('progress:'+acc.uid, {});
+  }
+  modal = 'dashboard';
+  render();
+}
+
+function isEventApplicable(ev, castleLevel){
+  if(ev.minCastleLevel === null || ev.minCastleLevel === undefined || ev.minCastleLevel === '') return true;
+  return (castleLevel || 1) >= ev.minCastleLevel;
+}
+
+function computeStats(progressObj, castleLevel){
+  const byType = {daily:{total:0,done:0}, weekly:{total:0,done:0}, special:{total:0,done:0}};
+  const byTracking = {daily:{total:0,done:0}, once:{total:0,done:0}};
+  let totalCount = 0, totalDone = 0;
+  for(const ev of events){
+    if(!isEventApplicable(ev, castleLevel)) continue;
+    totalCount++;
+    byType[ev.eventType].total++;
+    byTracking[ev.tracking].total++;
+    const key = computePeriodKey(ev);
+    const cur = progressObj[ev.id];
+    const isDone = !!(cur && cur.periodKey === key && cur.done);
+    if(isDone){
+      totalDone++;
+      byType[ev.eventType].done++;
+      byTracking[ev.tracking].done++;
+    }
+  }
+  const pct = totalCount ? Math.round((totalDone/totalCount)*100) : 0;
+  return {totalCount, totalDone, pct, byType, byTracking};
+}
+
+function onEventTypeChange(){
+  const type = document.getElementById('ev-type').value;
+  const trackingEl = document.getElementById('ev-tracking');
+  const dateFrom = document.getElementById('ev-date-from');
+  const dateTo = document.getElementById('ev-date-to');
+  if(type === 'daily'){
+    trackingEl.value = 'daily';
+    trackingEl.disabled = true;
+  }else{
+    trackingEl.disabled = false;
+  }
+  const isSpecial = type === 'special';
+  dateFrom.disabled = !isSpecial;
+  dateTo.disabled = !isSpecial;
+  dateFrom.required = isSpecial;
+  dateTo.required = isSpecial;
+  document.getElementById('date-range-field').style.opacity = isSpecial ? '1' : '0.5';
+}
+
+async function submitNewEvent(){
+  const name = document.getElementById('ev-name').value.trim();
+  const eventType = document.getElementById('ev-type').value;
+  const tracking = document.getElementById('ev-tracking').value;
+  const dateFrom = document.getElementById('ev-date-from').value;
+  const dateTo = document.getElementById('ev-date-to').value;
+  const minCastleRaw = document.getElementById('ev-min-castle').value.trim();
+
+  if(!name){ alert('Please name the event.'); return; }
+  if(eventType === 'special'){
+    if(!dateFrom || !dateTo){ alert('Special events need a start and end date.'); return; }
+    if(dateFrom > dateTo){ alert('The start date must be before the end date.'); return; }
+  }
+  let minCastleLevel = null;
+  if(minCastleRaw !== ''){
+    const n = parseInt(minCastleRaw, 10);
+    if(isNaN(n) || n < 1){ alert('Minimum Castle Level must be a positive number, or left blank.'); return; }
+    minCastleLevel = n;
+  }
+  const ev = {
+    id: genId(),
+    name,
+    eventType,
+    tracking: eventType === 'daily' ? 'daily' : tracking,
+    dateFrom: eventType === 'special' ? dateFrom : null,
+    dateTo: eventType === 'special' ? dateTo : null,
+    minCastleLevel
+  };
+  events.push(ev);
+  await storeSet('events', events);
+  closeModal();
+}
+
+/* ---- Bulk import activities from CSV / XLSX ---- */
+/* Expected columns: Name, Type (Daily/Weekly/Special Event), Tracking (Daily/Once), Date From, Date To */
+function normalizeEventType(raw){
+  const s = (raw||'').toString().trim().toLowerCase();
+  if(s.startsWith('daily')) return 'daily';
+  if(s.startsWith('weekly')) return 'weekly';
+  if(s.startsWith('special')) return 'special';
+  return null;
+}
+function normalizeTracking(raw){
+  const s = (raw||'').toString().trim().toLowerCase();
+  if(s.startsWith('daily')) return 'daily';
+  if(s.startsWith('once')) return 'once';
+  return null;
+}
+function normalizeDateStr(raw){
+  if(raw === null || raw === undefined || raw === '') return null;
+  const s = raw.toString().trim();
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if(m) return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(m) return `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;
+  const d = new Date(s);
+  if(!isNaN(d.getTime())) return d.toISOString().slice(0,10);
+  return null;
+}
+
+async function importActivityRows(rows){
+  let added = 0, skipped = 0;
+  for(const row of rows){
+    const name = (row.name||'').toString().trim();
+    const eventType = normalizeEventType(row.type);
+    if(!name || !eventType){ skipped++; continue; }
+    let tracking = eventType === 'daily' ? 'daily' : (normalizeTracking(row.tracking) || 'once');
+    let dateFrom = null, dateTo = null;
+    if(eventType === 'special'){
+      dateFrom = normalizeDateStr(row.dateFrom);
+      dateTo = normalizeDateStr(row.dateTo);
+      if(!dateFrom || !dateTo || dateFrom > dateTo){ skipped++; continue; }
+    }
+    let minCastleLevel = null;
+    const rawCastle = (row.minCastleLevel||'').toString().trim();
+    if(rawCastle !== ''){
+      const n = parseInt(rawCastle, 10);
+      if(!isNaN(n) && n >= 1) minCastleLevel = n;
+    }
+    events.push({id: genId(), name, eventType, tracking, dateFrom, dateTo, minCastleLevel});
+    added++;
+  }
+  await storeSet('events', events);
+  render();
+  if(modal === null) modal = 'event'; // keep the sheet open/visible after import
+  alert('Import complete — '+added+' added'+(skipped?(', '+skipped+' skipped (missing or invalid data)'):'')+'.');
+}
+
+function handleActivityFileUpload(input){
+  const file = input.files[0];
+  if(!file) return;
+  const name = file.name.toLowerCase();
+  if(name.endsWith('.xlsx') || name.endsWith('.xls')){
+    handleActivityXlsxUpload(file, input);
+  }else{
+    handleActivityCsvUpload(file, input);
+  }
+}
+
+function handleActivityCsvUpload(file, input){
+  const reader = new FileReader();
+  reader.onload = async function(e){
+    const text = e.target.result;
+    const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(l=>l.length);
+    if(!lines.length){ alert('The file appears to be empty.'); return; }
+    let start = 0;
+    if(/name/i.test(lines[0]) && /type/i.test(lines[0])) start = 1;
+    const rows = [];
+    for(let i=start;i<lines.length;i++){
+      const parts = lines[i].split(',').map(p=>p.trim().replace(/^"|"$/g,''));
+      rows.push({name: parts[0], type: parts[1], tracking: parts[2], dateFrom: parts[3], dateTo: parts[4], minCastleLevel: parts[5]});
+    }
+    await importActivityRows(rows);
+    input.value = '';
+  };
+  reader.readAsText(file);
+}
+
+async function handleActivityXlsxUpload(file, input){
+  try{
+    await loadXlsxLibrary();
+  }catch(err){
+    console.error(err);
+    alert('Could not load Excel support (needs an internet connection the first time). You can still import a .csv file instead.');
+    input.value = '';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = async function(e){
+    try{
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, {type:'array'});
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const grid = XLSX.utils.sheet_to_json(sheet, {header:1, raw:false, defval:''});
+      if(!grid.length){ alert('The spreadsheet appears to be empty.'); return; }
+      let start = 0;
+      const firstRow = grid[0].map(c=>String(c).toLowerCase());
+      if(firstRow.some(c=>c.includes('name')) && firstRow.some(c=>c.includes('type'))) start = 1;
+      const rows = [];
+      for(let i=start;i<grid.length;i++){
+        const r = grid[i];
+        if(!r || !r.length) continue;
+        rows.push({
+          name: String(r[0]||'').trim(),
+          type: String(r[1]||'').trim(),
+          tracking: String(r[2]||'').trim(),
+          dateFrom: String(r[3]||'').trim(),
+          dateTo: String(r[4]||'').trim(),
+          minCastleLevel: String(r[5]||'').trim()
+        });
+      }
+      await importActivityRows(rows);
+    }catch(err){
+      console.error(err);
+      alert('Could not read that Excel file. Please check the format and try again.');
+    }
+    input.value = '';
+  };
+  reader.onerror = function(){
+    alert('Could not read that file.');
+    input.value = '';
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+async function deleteEvent(id){
+  if(!confirm('Delete this event? This cannot be undone.')) return;
+  events = events.filter(e=>e.id!==id);
+  await storeSet('events', events);
+  for(const acc of accounts){
+    const p = await storeGet('progress:'+acc.uid, {});
+    if(p[id] !== undefined){ delete p[id]; await storeSet('progress:'+acc.uid, p); }
+  }
+  if(activeUid) progress = await storeGet('progress:'+activeUid, {});
+  render();
+}
+
+async function toggleEvent(id){
+  if(!activeUid) return;
+  const ev = events.find(e=>e.id===id);
+  if(!ev) return;
+  const key = computePeriodKey(ev);
+  const cur = progress[id];
+  const isDone = !!(cur && cur.periodKey === key && cur.done);
+  progress[id] = {periodKey: key, done: !isDone};
+  await storeSet('progress:'+activeUid, progress);
+  render();
+}
+
+function setTab(tab){ currentTab = tab; render(); }
+
+/* ============================= RENDER ============================= */
+function escapeHtml(s){
+  return (s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+function typeLabel(t){ return t==='daily'?'Daily':t==='weekly'?'Weekly':'Special Event'; }
+
+function render(){
+  const app = document.getElementById('app');
+  const activeAccount = accounts.find(a=>a.uid===activeUid);
+
+  let html = '';
+  html += `<div class="topbar">
+    <h1 class="topbar-title">Activity Tracker</h1>
+    <div class="account-row">
+      <select class="account-select" onchange="switchAccount(this.value)">
+        ${accounts.length ? accounts.map(a=>`<option value="${escapeHtml(a.uid)}" ${a.uid===activeUid?'selected':''}>${escapeHtml(a.username)} · Lvl ${a.castleLevel||1}</option>`).join('') : `<option value="">No accounts yet</option>`}
+      </select>
+      <button class="icon-btn" onclick="openDashboardModal()" aria-label="Dashboard" title="Dashboard">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px;margin-right:4px;"><path d="M4 20V10M12 20V4M20 20v-7" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>Stats
+      </button>
+      <button class="icon-btn" onclick="openAccountsModal()">Accounts</button>
+    </div>
+  </div>`;
+
+  if(!accounts.length){
+    html += `<div class="content"><div class="empty-state">
+      <h2>Add your first account</h2>
+      <p>Create an account to start tracking daily, weekly, and special-event activities. Progress is saved per account, right on this device.</p>
+      <button class="btn btn-primary" style="max-width:260px;margin:0 auto;" onclick="openAccountsModal()">Add account</button>
+    </div></div>`;
+    app.innerHTML = html + renderModal();
+    return;
+  }
+
+  html += `<div class="tabs">
+    ${['all','daily','weekly','special'].map(t=>`<button class="tab ${currentTab===t?'active':''}" onclick="setTab('${t}')">${t==='all'?'All':typeLabel(t)}</button>`).join('')}
+  </div>`;
+
+  html += `<div class="content">`;
+  const filtered = events.filter(e => (currentTab==='all' || e.eventType===currentTab) && isEventApplicable(e, activeAccount ? activeAccount.castleLevel : 1));
+
+  if(!filtered.length){
+    html += `<div class="empty-state">
+      <h2>${currentTab==='all' ? 'No activities yet' : 'Nothing here yet'}</h2>
+      <p>Tap the + button to add a daily habit, a weekly goal, or a time-boxed special event.</p>
+    </div>`;
+  }else{
+    const groups = currentTab === 'all'
+      ? [['daily','Daily'],['weekly','Weekly'],['special','Special Events']]
+      : [[currentTab, typeLabel(currentTab)]];
+
+    for(const [type, label] of groups){
+      const items = filtered.filter(e=>e.eventType===type);
+      if(!items.length) continue;
+      if(currentTab === 'all') html += `<div class="section-label">${label}</div>`;
+      for(const ev of items){
+        const key = computePeriodKey(ev);
+        const cur = progress[ev.id];
+        const isDone = !!(cur && cur.periodKey === key && cur.done);
+        const deadline = eventDeadlineInfo(ev);
+        const isUrgent = !isDone && deadline.urgent;
+        html += `<div class="event-card ${isUrgent?'urgent':''}">
+          <div class="checkbox ${isDone?'checked':''}" onclick="toggleEvent('${ev.id}')">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="event-info" onclick="toggleEvent('${ev.id}')">
+            <div class="event-name ${isDone?'checked':''}">${escapeHtml(ev.name)}</div>
+            <div class="event-meta">
+              <span class="badge type-${ev.eventType}">${typeLabel(ev.eventType)}</span>
+              <span class="badge">${ev.tracking==='daily'?'Daily':'Once'}</span>
+              ${ev.minCastleLevel ? `<span class="badge">Min Lvl ${ev.minCastleLevel}</span>` : ''}
+              <span class="badge ${isUrgent?'urgent':''}">${isUrgent?'⏳ ':''}${deadline.label}</span>
+            </div>
+          </div>
+          <button class="delete-x" onclick="deleteEvent('${ev.id}')">×</button>
+        </div>`;
+      }
+    }
+  }
+  html += `</div>`;
+  html += `<button class="fab" onclick="openEventModal()">+</button>`;
+
+  app.innerHTML = html + renderModal();
+
+  if(modal === 'event'){ onEventTypeChange(); }
+}
+
+function renderModal(){
+  if(modal === 'accounts') return renderAccountsModal();
+  if(modal === 'event') return renderEventModal();
+  if(modal === 'dashboard') return renderDashboardModal();
+  return '';
+}
+
+function renderDashboardModal(){
+  let inner = `<div class="sheet-header"><h3>Dashboard</h3><button class="sheet-close" onclick="closeModal()">Done</button></div>`;
+
+  if(!accounts.length){
+    inner += `<p class="hint">Add an account first to see progress here.</p>`;
+    return `<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="sheet"><div class="sheet-handle"></div>${inner}</div></div>`;
+  }
+
+  const activeAccount = accounts.find(a=>a.uid===activeUid);
+  if(activeAccount){
+    const myProgress = dashboardAllProgress[activeUid] || {};
+    const stats = computeStats(myProgress, activeAccount.castleLevel);
+    inner += `<div class="dash-hero">
+      <div class="dash-hero-name">${escapeHtml(activeAccount.username)}</div>
+      <div class="dash-hero-pct">${stats.totalCount ? stats.pct+'%' : '—'}</div>
+      <div class="dash-hero-sub">${stats.totalCount ? stats.totalDone+' of '+stats.totalCount+' activities done' : 'No activities yet'}</div>
+      ${(stats.totalCount>0 && stats.totalDone===stats.totalCount) ? `<div class="dash-complete-tag">All caught up</div>` : ''}
+    </div>`;
+
+    if(stats.totalCount){
+      // Daily tracking group — one shared timeframe (today's reset window)
+      const dailyStat = stats.byTracking.daily;
+      if(dailyStat.total){
+        const pct = Math.round((dailyStat.done/dailyStat.total)*100);
+        const resetInfo = eventDeadlineInfo({tracking:'daily'});
+        inner += `<div class="stat-row">
+          <div class="stat-row-top"><span>Daily</span><span>${dailyStat.done}/${dailyStat.total}</span></div>
+          <div class="bar"><div class="bar-fill" style="width:${pct}%"></div></div>
+          <div class="hint" style="margin-top:5px;">Today · ${resetInfo.label}</div>
+        </div>`;
+      }
+
+      // Once tracking group — timeframes vary per item (weekly window or special date range), so itemize
+      const onceStat = stats.byTracking.once;
+      if(onceStat.total){
+        const pct = Math.round((onceStat.done/onceStat.total)*100);
+        inner += `<div class="stat-row">
+          <div class="stat-row-top"><span>Once</span><span>${onceStat.done}/${onceStat.total}</span></div>
+          <div class="bar"><div class="bar-fill" style="width:${pct}%"></div></div>
+          <div class="hint" style="margin-top:5px;">Weekly goals and special events — each tracked once per window</div>
+        </div>`;
+
+        const onceEvents = events.filter(e=>e.tracking==='once' && isEventApplicable(e, activeAccount.castleLevel)).map(ev=>{
+          const key = computePeriodKey(ev);
+          const cur = myProgress[ev.id];
+          const isDone = !!(cur && cur.periodKey === key && cur.done);
+          const deadline = eventDeadlineInfo(ev);
+          return {ev, isDone, deadline};
+        });
+        onceEvents.sort((a,b)=>{
+          if(a.isDone !== b.isDone) return a.isDone ? 1 : -1;
+          return a.deadline.remainingMs - b.deadline.remainingMs;
+        });
+        inner += onceEvents.map(({ev,isDone,deadline})=>{
+          const isUrgent = !isDone && deadline.urgent;
+          return `<div class="once-item ${isUrgent?'urgent':''} ${isDone?'done':''}">
+            <span class="once-item-dot ${isDone?'done':''}"></span>
+            <span class="once-item-name ${isDone?'done':''}">${escapeHtml(ev.name)}</span>
+            <span class="once-item-frame ${isUrgent?'urgent':''}">${isUrgent?'⏳ ':''}${isDone?'Done':deadline.label}</span>
+          </div>`;
+        }).join('');
+      }
+    }
+    inner += `<div class="divider"></div>`;
+  }
+
+  inner += `<div class="section-label" style="margin-top:0;">All accounts</div>`;
+  const rows = accounts.map(a => ({acc:a, stats: computeStats(dashboardAllProgress[a.uid] || {}, a.castleLevel)}));
+  rows.sort((a,b)=> b.stats.pct - a.stats.pct);
+  for(const {acc, stats} of rows){
+    const isYou = acc.uid === activeUid;
+    const full = stats.totalCount>0 && stats.totalDone===stats.totalCount;
+    inner += `<div class="account-stat-row">
+      <div class="account-stat-top">
+        <div class="account-stat-name">${escapeHtml(acc.username)}${isYou?'<span class="you-tag">ACTIVE</span>':''}</div>
+        <div class="account-stat-pct ${full?'full':''}">${stats.totalCount ? stats.pct+'%' : '—'}</div>
+      </div>
+      <div class="bar"><div class="bar-fill" style="width:${stats.totalCount?stats.pct:0}%"></div></div>
+    </div>`;
+  }
+
+  return `<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="sheet"><div class="sheet-handle"></div>${inner}</div></div>`;
+}
+
+function renderAccountsModal(){
+  let inner = `<div class="sheet-header"><h3>Accounts</h3><button class="sheet-close" onclick="closeModal()">Done</button></div>`;
+
+  inner += `<div class="section-label" style="margin-top:0;">Your accounts</div>`;
+  if(!accounts.length){
+    inner += `<p class="hint">No accounts yet — add one below.</p>`;
+  }else{
+    for(const acc of accounts){
+      if(editingUid === acc.uid){
+        inner += `<div class="account-item">
+          <div class="field"><label>Username</label><input type="text" id="edit-acc-username" value="${escapeHtml(acc.username)}"></div>
+          <div class="field"><label>Email</label><input type="email" id="edit-acc-email" value="${escapeHtml(acc.email||'')}"></div>
+          <div class="field-row">
+            <div class="field"><label>UID</label><input type="text" id="edit-acc-uid" value="${escapeHtml(acc.uid)}"></div>
+            <div class="field"><label>Castle Level</label><input type="number" id="edit-acc-castle" min="1" value="${acc.castleLevel||1}"></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-secondary" onclick="cancelEditAccount()">Cancel</button>
+            <button class="btn btn-primary" onclick="saveEditAccount('${escapeHtml(acc.uid)}')">Save</button>
+          </div>
+        </div>`;
+      }else{
+        inner += `<div class="account-item">
+          <div class="account-item-top">
+            <div>
+              <div class="account-name">${escapeHtml(acc.username)} ${acc.uid===activeUid?'· <span style="color:var(--accent-dark);">active</span>':''}</div>
+              <div class="account-sub">${escapeHtml(acc.email||'no email')} · UID ${escapeHtml(acc.uid)} · Castle Lvl ${acc.castleLevel||1}</div>
+            </div>
+            <div class="account-actions">
+              <button class="link-btn" onclick="startEditAccount('${escapeHtml(acc.uid)}')">Edit</button>
+              <button class="link-btn danger" onclick="deleteAccount('${escapeHtml(acc.uid)}')">Delete</button>
+            </div>
+          </div>
+        </div>`;
+      }
+    }
+  }
+
+  inner += `<div class="divider"></div>`;
+  inner += `<div class="section-label" style="margin-top:0;">Add account manually</div>
+    <div class="field"><label>Username</label><input type="text" id="new-acc-username" placeholder="e.g. jsmith"></div>
+    <div class="field-row">
+      <div class="field"><label>Email</label><input type="email" id="new-acc-email" placeholder="optional"></div>
+      <div class="field"><label>UID</label><input type="text" id="new-acc-uid" placeholder="unique ID"></div>
+    </div>
+    <div class="field"><label>Castle Level</label><input type="number" id="new-acc-castle" min="1" value="1"></div>
+    <button class="btn btn-primary" onclick="addAccountManual()">Add account</button>`;
+
+  inner += `<div class="divider"></div>`;
+  inner += `<div class="section-label" style="margin-top:0;">Or upload a file</div>
+    <div class="upload-box">
+      <label class="upload-label" for="csv-file">Choose a CSV or Excel file to import</label>
+      <input type="file" id="csv-file" accept=".csv,text/csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" onchange="handleFileUpload(this)">
+      <div class="csv-format">Columns: Username, Email, UID, Castle Level</div>
+    </div>`;
+
+  return `<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="sheet"><div class="sheet-handle"></div>${inner}</div></div>`;
+}
+
+function renderEventModal(){
+  let inner = `<div class="sheet-header"><h3>New activity</h3><button class="sheet-close" onclick="closeModal()">Cancel</button></div>`;
+  inner += `
+    <div class="field"><label>Event name</label><input type="text" id="ev-name" placeholder="e.g. Morning stretch"></div>
+    <div class="field-row">
+      <div class="field">
+        <label>Event type</label>
+        <select id="ev-type" onchange="onEventTypeChange()">
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+          <option value="special">Special Event</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Tracking</label>
+        <select id="ev-tracking">
+          <option value="daily">Daily</option>
+          <option value="once" selected>Once</option>
+        </select>
+      </div>
+    </div>
+    <div class="field" id="date-range-field">
+      <label>Event duration</label>
+      <div class="field-row">
+        <input type="date" id="ev-date-from" disabled>
+        <input type="date" id="ev-date-to" disabled>
+      </div>
+      <div class="hint">Only used for Special Events. The event is removed automatically the day after it ends.</div>
+    </div>
+    <div class="field">
+      <label>Minimum Castle Level</label>
+      <input type="number" id="ev-min-castle" min="1" placeholder="Leave blank if anyone can do it">
+      <div class="hint">Accounts below this level won't see this activity, and it won't count toward their progress.</div>
+    </div>
+    <button class="btn btn-primary" onclick="submitNewEvent()">Add activity</button>
+    <div class="divider"></div>
+    <div class="section-label" style="margin-top:0;">Or import several from a file</div>
+    <div class="upload-box">
+      <label class="upload-label" for="activity-file">Choose a CSV or Excel file to import</label>
+      <input type="file" id="activity-file" accept=".csv,text/csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" onchange="handleActivityFileUpload(this)">
+      <div class="csv-format">Columns: Name, Type (Daily / Weekly / Special Event), Tracking (Daily / Once), Date From, Date To, Min Castle Level</div>
+      <div class="hint" style="margin-top:6px;">Date From/To are only needed for Special Events. Leave Min Castle Level blank if anyone can do the activity.</div>
+    </div>
+  `;
+  return `<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="sheet"><div class="sheet-handle"></div>${inner}</div></div>`;
+}
+
+window.addEventListener('error', function(e){
+  console.error('Unhandled error:', e.error || e.message);
+});
+window.addEventListener('unhandledrejection', function(e){
+  console.error('Unhandled promise rejection:', e.reason);
+});
+
+function isStandaloneDisplay(){
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+function isIosSafari(){
+  const ua = window.navigator.userAgent;
+  const isIos = /iPad|iPhone|iPod/.test(ua) || (ua.includes('Macintosh') && 'ontouchend' in document);
+  const isSafari = /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
+  return isIos && isSafari;
+}
+function dismissInstallTip(){
+  storeSet('installTipDismissed', true);
+  const el = document.getElementById('install-tip');
+  if(el) el.remove();
+}
+function maybeShowInstallTip(){
+  if(isStandaloneDisplay()) return;
+  if(!isIosSafari()) return;
+  if(storeGet('installTipDismissed', false)) return;
+  const div = document.createElement('div');
+  div.className = 'install-tip';
+  div.id = 'install-tip';
+  div.innerHTML = `<span>Install this as an app: tap <b>Share</b>, then <b>Add to Home Screen</b>.</span><button class="tip-close" onclick="dismissInstallTip()">×</button>`;
+  document.body.appendChild(div);
+}
+
+init();
+</script>
+</body>
+</html>
