@@ -226,8 +226,15 @@
   .badge.type-daily{background:var(--pastel-mint-pale);color:#09615A;border-color:transparent;}
   .badge.type-weekly{background:var(--pastel-orchid);color:#891C60;border-color:transparent;}
   .badge.type-special{background:var(--pastel-lilac);color:#5B2E53;border-color:transparent;}
+  .badge.type-ondemand{background:var(--pastel-mauve);color:#3A2440;border-color:transparent;}
   .badge.urgent{background:var(--warn-bg);color:var(--warn);font-weight:700;}
   .event-card.urgent{border-color:var(--warn);background:var(--warn-bg);}
+  .event-actions{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    gap:4px;
+  }
   .delete-x{
     color:var(--ink-muted);
     font-size:18px;
@@ -588,7 +595,8 @@ let activeUid = null;
 let progress = {};
 let currentTab = 'all';
 let editingUid = null; // account currently in edit mode within manage sheet
-let modal = null; // null | 'accounts' | 'event'
+let editingEventId = null; // activity currently in edit mode within event sheet
+let modal = null; // null | 'accounts' | 'event' | 'dashboard'
 
 /* ============================= STORAGE HELPERS ============================= */
 function storeGet(key, fallback){
@@ -695,6 +703,43 @@ function eventDeadlineInfo(ev){
   return {label: dl<=0 ? 'Last day' : dl+' day'+(dl===1?'':'s')+' left', remainingMs: dl*24*60*60*1000, urgent: dl<=1};
 }
 
+// On Demand activities: checking them starts a cooldown timer; they are never part of progress.
+function getOnDemandState(ev, entry){
+  const cooldownMs = (ev.cooldownHours || 8) * 60 * 60 * 1000;
+  if(entry && entry.activatedAt){
+    const elapsed = Date.now() - entry.activatedAt;
+    if(elapsed < cooldownMs){
+      return {active: true, remainingMs: cooldownMs - elapsed};
+    }
+  }
+  return {active: false, remainingMs: 0};
+}
+
+// Unified per-card display state for both normal (Daily/Once) and On Demand activities.
+function getEventDisplayState(ev, progressObj){
+  if(ev.eventType === 'ondemand'){
+    const entry = progressObj[ev.id];
+    const state = getOnDemandState(ev, entry);
+    return {
+      isDone: state.active,
+      isUrgent: false,
+      trackingBadge: (ev.cooldownHours||8)+'h cooldown',
+      statusBadge: state.active ? ('Active · '+formatDuration(state.remainingMs)+' left') : 'Ready'
+    };
+  }
+  const key = computePeriodKey(ev);
+  const cur = progressObj[ev.id];
+  const isDone = !!(cur && cur.periodKey === key && cur.done);
+  const deadline = eventDeadlineInfo(ev);
+  const isUrgent = !isDone && deadline.urgent;
+  return {
+    isDone,
+    isUrgent,
+    trackingBadge: ev.tracking==='daily' ? 'Daily' : 'Once',
+    statusBadge: (isUrgent?'⏳ ':'') + deadline.label
+  };
+}
+
 async function cleanupExpiredSpecialEvents(){
   const now = new Date();
   const expired = events.filter(e => isExpiredSpecial(e, now));
@@ -737,20 +782,26 @@ async function switchAccount(uid){
   render();
 }
 
+function parseTagsInput(raw){
+  return (raw||'').split(',').map(t=>t.trim()).filter(t=>t.length>0);
+}
+
 async function addAccountManual(){
   const username = document.getElementById('new-acc-username').value.trim();
   const email = document.getElementById('new-acc-email').value.trim();
   const uid = document.getElementById('new-acc-uid').value.trim();
   const castleLevel = parseInt(document.getElementById('new-acc-castle').value, 10) || 1;
+  const tags = parseTagsInput(document.getElementById('new-acc-tags').value);
   if(!username || !uid){ alert('Username and UID are required.'); return; }
   if(accounts.find(a=>a.uid===uid)){ alert('An account with this UID already exists.'); return; }
-  accounts.push({username, email, uid, castleLevel});
+  accounts.push({username, email, uid, castleLevel, tags});
   await storeSet('accounts', accounts);
   await storeSet('progress:'+uid, {});
   document.getElementById('new-acc-username').value = '';
   document.getElementById('new-acc-email').value = '';
   document.getElementById('new-acc-uid').value = '';
   document.getElementById('new-acc-castle').value = '1';
+  document.getElementById('new-acc-tags').value = '';
   if(!activeUid) await switchAccount(uid); else render();
 }
 
@@ -762,12 +813,13 @@ async function saveEditAccount(oldUid){
   const email = document.getElementById('edit-acc-email').value.trim();
   const newUid = document.getElementById('edit-acc-uid').value.trim();
   const castleLevel = parseInt(document.getElementById('edit-acc-castle').value, 10) || 1;
+  const tags = parseTagsInput(document.getElementById('edit-acc-tags').value);
   if(!username || !newUid){ alert('Username and UID are required.'); return; }
   if(newUid !== oldUid && accounts.find(a=>a.uid===newUid)){
     alert('An account with this UID already exists.'); return;
   }
   const acc = accounts.find(a=>a.uid===oldUid);
-  acc.username = username; acc.email = email; acc.castleLevel = castleLevel;
+  acc.username = username; acc.email = email; acc.castleLevel = castleLevel; acc.tags = tags;
   if(newUid !== oldUid){
     const oldProgress = await storeGet('progress:'+oldUid, {});
     await storeDelete('progress:'+oldUid);
@@ -850,7 +902,7 @@ function handleFileUpload(input){
 }
 
 async function importRows(rows){
-  // rows: array of {username, email, uid} (already trimmed strings)
+  // rows: array of {username, email, uid, castleLevel, tags} (already trimmed strings)
   let added = 0, updated = 0;
   const skippedDetails = [];
   for(let i=0; i<rows.length; i++){
@@ -860,11 +912,12 @@ async function importRows(rows){
     const email = (row.email||'').trim();
     const uid = (row.uid||'').trim();
     const castleLevel = parseInt(row.castleLevel, 10) || 1;
+    const tags = (row.tags||'').toString().split(';').map(t=>t.trim()).filter(t=>t.length>0);
     if(!username){ skippedDetails.push(rowLabel+': missing Username'); continue; }
     if(!uid){ skippedDetails.push(rowLabel+': missing UID'); continue; }
     const existing = accounts.find(a=>a.uid===uid);
-    if(existing){ existing.username = username; existing.email = email || existing.email; existing.castleLevel = castleLevel; updated++; }
-    else{ accounts.push({username, email, uid, castleLevel}); await storeSet('progress:'+uid, {}); added++; }
+    if(existing){ existing.username = username; existing.email = email || existing.email; existing.castleLevel = castleLevel; existing.tags = tags; updated++; }
+    else{ accounts.push({username, email, uid, castleLevel, tags}); await storeSet('progress:'+uid, {}); added++; }
   }
   await storeSet('accounts', accounts);
   if(!activeUid && accounts.length) await switchAccount(accounts[0].uid); else render();
@@ -889,7 +942,7 @@ function handleCsvUpload(file, input){
     const rows = [];
     for(let i=start;i<lines.length;i++){
       const parts = lines[i].split(',').map(p=>p.trim().replace(/^"|"$/g,''));
-      rows.push({username: parts[0], email: parts[1], uid: parts[2], castleLevel: parts[3]});
+      rows.push({username: parts[0], email: parts[1], uid: parts[2], castleLevel: parts[3], tags: parts[4]});
     }
     await importRows(rows);
     input.value = '';
@@ -921,7 +974,7 @@ async function handleXlsxUpload(file, input){
       for(let i=start;i<grid.length;i++){
         const r = grid[i];
         if(!r || !r.length) continue;
-        rows.push({username: String(r[0]||'').trim(), email: String(r[1]||'').trim(), uid: String(r[2]||'').trim(), castleLevel: String(r[3]||'').trim()});
+        rows.push({username: String(r[0]||'').trim(), email: String(r[1]||'').trim(), uid: String(r[2]||'').trim(), castleLevel: String(r[3]||'').trim(), tags: String(r[4]||'').trim()});
       }
       await importRows(rows);
     }catch(err){
@@ -938,8 +991,8 @@ async function handleXlsxUpload(file, input){
 }
 
 /* ============================= ACTIONS: EVENTS ============================= */
-function openEventModal(){ modal = 'event'; render(); }
-function closeModal(){ modal = null; editingUid = null; render(); }
+function openEventModal(eventId){ editingEventId = eventId || null; modal = 'event'; render(); }
+function closeModal(){ modal = null; editingUid = null; editingEventId = null; render(); }
 function openAccountsModal(){ modal = 'accounts'; render(); }
 
 let dashboardAllProgress = {};
@@ -952,17 +1005,27 @@ async function openDashboardModal(){
   render();
 }
 
-function isEventApplicable(ev, castleLevel){
-  if(ev.minCastleLevel === null || ev.minCastleLevel === undefined || ev.minCastleLevel === '') return true;
-  return (castleLevel || 1) >= ev.minCastleLevel;
+function isEventApplicable(ev, account){
+  const castleLevel = account ? (account.castleLevel || 1) : 1;
+  if(ev.minCastleLevel !== null && ev.minCastleLevel !== undefined && ev.minCastleLevel !== ''){
+    if(castleLevel < ev.minCastleLevel) return false;
+  }
+  if(ev.requiredTag){
+    const tags = (account && Array.isArray(account.tags)) ? account.tags : [];
+    const target = ev.requiredTag.trim().toLowerCase();
+    const hasTag = tags.some(t => (t||'').trim().toLowerCase() === target);
+    if(!hasTag) return false;
+  }
+  return true;
 }
 
-function computeStats(progressObj, castleLevel){
+function computeStats(progressObj, account){
   const byType = {daily:{total:0,done:0}, weekly:{total:0,done:0}, special:{total:0,done:0}};
   const byTracking = {daily:{total:0,done:0}, once:{total:0,done:0}};
   let totalCount = 0, totalDone = 0;
   for(const ev of events){
-    if(!isEventApplicable(ev, castleLevel)) continue;
+    if(ev.eventType === 'ondemand') continue; // on-demand activities are never part of progress
+    if(!isEventApplicable(ev, account)) continue;
     totalCount++;
     byType[ev.eventType].total++;
     byTracking[ev.tracking].total++;
@@ -984,18 +1047,30 @@ function onEventTypeChange(){
   const trackingEl = document.getElementById('ev-tracking');
   const dateFrom = document.getElementById('ev-date-from');
   const dateTo = document.getElementById('ev-date-to');
+  const cooldownEl = document.getElementById('ev-cooldown-hours');
+  const cooldownField = document.getElementById('cooldown-field');
+
   if(type === 'daily'){
     trackingEl.value = 'daily';
+    trackingEl.disabled = true;
+  }else if(type === 'ondemand'){
     trackingEl.disabled = true;
   }else{
     trackingEl.disabled = false;
   }
+
   const isSpecial = type === 'special';
   dateFrom.disabled = !isSpecial;
   dateTo.disabled = !isSpecial;
   dateFrom.required = isSpecial;
   dateTo.required = isSpecial;
   document.getElementById('date-range-field').style.opacity = isSpecial ? '1' : '0.5';
+
+  const isOnDemand = type === 'ondemand';
+  if(cooldownEl){
+    cooldownEl.disabled = !isOnDemand;
+    cooldownField.style.opacity = isOnDemand ? '1' : '0.5';
+  }
 }
 
 function nameKey(name){ return (name||'').trim().toLowerCase(); }
@@ -1004,16 +1079,18 @@ function isDuplicateEvent(name, eventType, excludeId){
   return events.some(e => e.id !== excludeId && e.eventType === eventType && nameKey(e.name) === key);
 }
 
-async function submitNewEvent(){
+async function submitEventForm(){
   const name = document.getElementById('ev-name').value.trim();
   const eventType = document.getElementById('ev-type').value;
   const tracking = document.getElementById('ev-tracking').value;
   const dateFrom = document.getElementById('ev-date-from').value;
   const dateTo = document.getElementById('ev-date-to').value;
   const minCastleRaw = document.getElementById('ev-min-castle').value.trim();
+  const requiredTag = document.getElementById('ev-required-tag').value.trim() || null;
+  const cooldownRaw = document.getElementById('ev-cooldown-hours').value.trim();
 
   if(!name){ alert('Please name the event.'); return; }
-  if(isDuplicateEvent(name, eventType)){
+  if(isDuplicateEvent(name, eventType, editingEventId)){
     alert('An activity named "'+name+'" already exists under '+typeLabel(eventType)+'. Choose a different name, or delete the existing one first.');
     return;
   }
@@ -1027,16 +1104,38 @@ async function submitNewEvent(){
     if(isNaN(n) || n < 1){ alert('Minimum Castle Level must be a positive number, or left blank.'); return; }
     minCastleLevel = n;
   }
-  const ev = {
-    id: genId(),
-    name,
-    eventType,
-    tracking: eventType === 'daily' ? 'daily' : tracking,
-    dateFrom: eventType === 'special' ? dateFrom : null,
-    dateTo: eventType === 'special' ? dateTo : null,
-    minCastleLevel
-  };
-  events.push(ev);
+  let cooldownHours = 8;
+  if(eventType === 'ondemand' && cooldownRaw !== ''){
+    const n = parseInt(cooldownRaw, 10);
+    if(isNaN(n) || n < 1){ alert('Cooldown must be a positive number of hours.'); return; }
+    cooldownHours = n;
+  }
+
+  if(editingEventId){
+    const ev = events.find(e=>e.id===editingEventId);
+    if(!ev){ closeModal(); return; }
+    ev.name = name;
+    ev.eventType = eventType;
+    ev.tracking = eventType === 'daily' ? 'daily' : (eventType === 'ondemand' ? 'ondemand' : tracking);
+    ev.dateFrom = eventType === 'special' ? dateFrom : null;
+    ev.dateTo = eventType === 'special' ? dateTo : null;
+    ev.minCastleLevel = minCastleLevel;
+    ev.requiredTag = requiredTag;
+    ev.cooldownHours = eventType === 'ondemand' ? cooldownHours : null;
+  } else {
+    const ev = {
+      id: genId(),
+      name,
+      eventType,
+      tracking: eventType === 'daily' ? 'daily' : (eventType === 'ondemand' ? 'ondemand' : tracking),
+      dateFrom: eventType === 'special' ? dateFrom : null,
+      dateTo: eventType === 'special' ? dateTo : null,
+      minCastleLevel,
+      requiredTag,
+      cooldownHours: eventType === 'ondemand' ? cooldownHours : null
+    };
+    events.push(ev);
+  }
   await storeSet('events', events);
   closeModal();
 }
@@ -1066,6 +1165,7 @@ function normalizeEventType(raw){
   if(s.startsWith('daily')) return 'daily';
   if(s.startsWith('weekly')) return 'weekly';
   if(s.startsWith('special')) return 'special';
+  if(s.startsWith('on demand') || s.startsWith('ondemand') || s.startsWith('on-demand')) return 'ondemand';
   return null;
 }
 function normalizeTracking(raw){
@@ -1101,7 +1201,7 @@ async function importActivityRows(rows){
     if(!eventType){ skippedDetails.push(rowLabel+': Type must be Daily, Weekly, or Special Event'); continue; }
     if(isDuplicateEvent(name, eventType)){ skippedDetails.push(rowLabel+': duplicate — already exists under '+typeLabel(eventType)); continue; }
 
-    let tracking = eventType === 'daily' ? 'daily' : (normalizeTracking(row.tracking) || 'once');
+    let tracking = eventType === 'daily' ? 'daily' : (eventType === 'ondemand' ? 'ondemand' : (normalizeTracking(row.tracking) || 'once'));
     let dateFrom = null, dateTo = null;
     if(eventType === 'special'){
       dateFrom = normalizeDateStr(row.dateFrom);
@@ -1115,7 +1215,9 @@ async function importActivityRows(rows){
       const n = parseInt(rawCastle, 10);
       if(!isNaN(n) && n >= 1) minCastleLevel = n;
     }
-    events.push({id: genId(), name, eventType, tracking, dateFrom, dateTo, minCastleLevel});
+    const requiredTag = (row.requiredTag||'').toString().trim() || null;
+    const cooldownHours = eventType === 'ondemand' ? 8 : null; // imported On Demand rows default to 8h; edit afterward to change
+    events.push({id: genId(), name, eventType, tracking, dateFrom, dateTo, minCastleLevel, requiredTag, cooldownHours});
     added++;
   }
 
@@ -1155,7 +1257,7 @@ function handleActivityCsvUpload(file, input){
     const rows = [];
     for(let i=start;i<lines.length;i++){
       const parts = lines[i].split(',').map(p=>p.trim().replace(/^"|"$/g,''));
-      rows.push({name: parts[0], type: parts[1], tracking: parts[2], dateFrom: parts[3], dateTo: parts[4], minCastleLevel: parts[5]});
+      rows.push({name: parts[0], type: parts[1], tracking: parts[2], dateFrom: parts[3], dateTo: parts[4], minCastleLevel: parts[5], requiredTag: parts[6]});
     }
     await importActivityRows(rows);
     input.value = '';
@@ -1193,7 +1295,8 @@ async function handleActivityXlsxUpload(file, input){
           tracking: String(r[2]||'').trim(),
           dateFrom: String(r[3]||'').trim(),
           dateTo: String(r[4]||'').trim(),
-          minCastleLevel: String(r[5]||'').trim()
+          minCastleLevel: String(r[5]||'').trim(),
+          requiredTag: String(r[6]||'').trim()
         });
       }
       await importActivityRows(rows);
@@ -1226,6 +1329,19 @@ async function toggleEvent(id){
   if(!activeUid) return;
   const ev = events.find(e=>e.id===id);
   if(!ev) return;
+
+  if(ev.eventType === 'ondemand'){
+    const state = getOnDemandState(ev, progress[id]);
+    if(state.active){
+      delete progress[id]; // tap again to cancel early
+    } else {
+      progress[id] = {activatedAt: Date.now()};
+    }
+    await storeSet('progress:'+activeUid, progress);
+    render();
+    return;
+  }
+
   const key = computePeriodKey(ev);
   const cur = progress[id];
   const isDone = !!(cur && cur.periodKey === key && cur.done);
@@ -1285,7 +1401,25 @@ function escapeHtml(s){
   return (s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
 
-function typeLabel(t){ return t==='daily'?'Daily':t==='weekly'?'Weekly':'Special Event'; }
+function typeLabel(t){ return t==='daily'?'Daily':t==='weekly'?'Weekly':t==='ondemand'?'On Demand':'Special Event'; }
+
+function accountDailyIndicator(acc){
+  const p = (acc.uid === activeUid) ? progress : storeGet('progress:'+acc.uid, {});
+  let total = 0, done = 0;
+  for(const ev of events){
+    if(ev.eventType === 'ondemand') continue;
+    if(ev.tracking !== 'daily') continue;
+    if(!isEventApplicable(ev, acc)) continue;
+    total++;
+    const key = computePeriodKey(ev);
+    const cur = p[ev.id];
+    if(cur && cur.periodKey === key && cur.done) done++;
+  }
+  if(total === 0) return '';
+  if(done === total) return '✅ ';
+  if(done > 0) return '🟡 ';
+  return '⬜ ';
+}
 
 function render(){
   const app = document.getElementById('app');
@@ -1296,7 +1430,7 @@ function render(){
     <h1 class="topbar-title">Activity Tracker</h1>
     <div class="account-row">
       <select class="account-select" onchange="switchAccount(this.value)">
-        ${accounts.length ? accounts.map(a=>`<option value="${escapeHtml(a.uid)}" ${a.uid===activeUid?'selected':''}>${escapeHtml(a.username)} · Lvl ${a.castleLevel||1}</option>`).join('') : `<option value="">No accounts yet</option>`}
+        ${accounts.length ? accounts.map(a=>`<option value="${escapeHtml(a.uid)}" ${a.uid===activeUid?'selected':''}>${accountDailyIndicator(a)}${escapeHtml(a.username)} · Lvl ${a.castleLevel||1}</option>`).join('') : `<option value="">No accounts yet</option>`}
       </select>
       <button class="icon-btn" onclick="openDashboardModal()" aria-label="Dashboard" title="Dashboard">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style="vertical-align:-2px;margin-right:4px;"><path d="M4 20V10M12 20V4M20 20v-7" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>Stats
@@ -1316,7 +1450,7 @@ function render(){
   }
 
   html += `<div class="tabs">
-    ${['all','daily','weekly','special'].map(t=>`<button class="tab ${currentTab===t?'active':''}" onclick="setTab('${t}')">${t==='all'?'All':typeLabel(t)}</button>`).join('')}
+    ${['all','daily','weekly','special','ondemand'].map(t=>`<button class="tab ${currentTab===t?'active':''}" onclick="setTab('${t}')">${t==='all'?'All':typeLabel(t)}</button>`).join('')}
   </div>`;
 
   html += `<div class="content">`;
@@ -1340,16 +1474,16 @@ function render(){
     </div>`;
   }
 
-  const filtered = events.filter(e => (currentTab==='all' || e.eventType===currentTab) && isEventApplicable(e, activeAccount ? activeAccount.castleLevel : 1));
+  const filtered = events.filter(e => (currentTab==='all' || e.eventType===currentTab) && isEventApplicable(e, activeAccount));
 
   if(!filtered.length){
     html += `<div class="empty-state">
       <h2>${currentTab==='all' ? 'No activities yet' : 'Nothing here yet'}</h2>
-      <p>Tap the + button to add a daily habit, a weekly goal, or a time-boxed special event.</p>
+      <p>Tap the + button to add a daily habit, a weekly goal, a time-boxed special event, or an on-demand activity.</p>
     </div>`;
   }else{
     const groups = currentTab === 'all'
-      ? [['daily','Daily'],['weekly','Weekly'],['special','Special Events']]
+      ? [['daily','Daily'],['weekly','Weekly'],['special','Special Events'],['ondemand','On Demand']]
       : [[currentTab, typeLabel(currentTab)]];
 
     for(const [type, label] of groups){
@@ -1357,25 +1491,25 @@ function render(){
       if(!items.length) continue;
       if(currentTab === 'all') html += `<div class="section-label">${label}</div>`;
       for(const ev of items){
-        const key = computePeriodKey(ev);
-        const cur = progress[ev.id];
-        const isDone = !!(cur && cur.periodKey === key && cur.done);
-        const deadline = eventDeadlineInfo(ev);
-        const isUrgent = !isDone && deadline.urgent;
-        html += `<div class="event-card ${isUrgent?'urgent':''}">
-          <div class="checkbox ${isDone?'checked':''}" onclick="toggleEvent('${ev.id}')">
+        const state = getEventDisplayState(ev, progress);
+        html += `<div class="event-card ${state.isUrgent?'urgent':''}">
+          <div class="checkbox ${state.isDone?'checked':''}" onclick="toggleEvent('${ev.id}')">
             <svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
           <div class="event-info" onclick="toggleEvent('${ev.id}')">
-            <div class="event-name ${isDone?'checked':''}">${escapeHtml(ev.name)}</div>
+            <div class="event-name ${state.isDone?'checked':''}">${escapeHtml(ev.name)}</div>
             <div class="event-meta">
               <span class="badge type-${ev.eventType}">${typeLabel(ev.eventType)}</span>
-              <span class="badge">${ev.tracking==='daily'?'Daily':'Once'}</span>
+              <span class="badge">${state.trackingBadge}</span>
               ${ev.minCastleLevel ? `<span class="badge">Min Lvl ${ev.minCastleLevel}</span>` : ''}
-              <span class="badge ${isUrgent?'urgent':''}">${isUrgent?'⏳ ':''}${deadline.label}</span>
+              ${ev.requiredTag ? `<span class="badge">Tag: ${escapeHtml(ev.requiredTag)}</span>` : ''}
+              <span class="badge ${state.isUrgent?'urgent':''}">${state.statusBadge}</span>
             </div>
           </div>
-          <button class="delete-x" onclick="deleteEvent('${ev.id}')">×</button>
+          <div class="event-actions">
+            <button class="link-btn" onclick="openEventModal('${ev.id}')">Edit</button>
+            <button class="delete-x" onclick="deleteEvent('${ev.id}')">×</button>
+          </div>
         </div>`;
       }
     }
@@ -1406,7 +1540,7 @@ function renderDashboardModal(){
   const activeAccount = accounts.find(a=>a.uid===activeUid);
   if(activeAccount){
     const myProgress = dashboardAllProgress[activeUid] || {};
-    const stats = computeStats(myProgress, activeAccount.castleLevel);
+    const stats = computeStats(myProgress, activeAccount);
     inner += `<div class="dash-hero">
       <div class="dash-hero-name">${escapeHtml(activeAccount.username)}</div>
       <div class="dash-hero-pct">${stats.totalCount ? stats.pct+'%' : '—'}</div>
@@ -1437,7 +1571,7 @@ function renderDashboardModal(){
           <div class="hint" style="margin-top:5px;">Weekly goals and special events — each tracked once per window</div>
         </div>`;
 
-        const onceEvents = events.filter(e=>e.tracking==='once' && isEventApplicable(e, activeAccount.castleLevel)).map(ev=>{
+        const onceEvents = events.filter(e=>e.tracking==='once' && isEventApplicable(e, activeAccount)).map(ev=>{
           const key = computePeriodKey(ev);
           const cur = myProgress[ev.id];
           const isDone = !!(cur && cur.periodKey === key && cur.done);
@@ -1462,7 +1596,7 @@ function renderDashboardModal(){
   }
 
   inner += `<div class="section-label" style="margin-top:0;">All accounts</div>`;
-  const rows = accounts.map(a => ({acc:a, stats: computeStats(dashboardAllProgress[a.uid] || {}, a.castleLevel)}));
+  const rows = accounts.map(a => ({acc:a, stats: computeStats(dashboardAllProgress[a.uid] || {}, a)}));
   rows.sort((a,b)=> b.stats.pct - a.stats.pct);
   for(const {acc, stats} of rows){
     const isYou = acc.uid === activeUid;
@@ -1495,6 +1629,7 @@ function renderAccountsModal(){
             <div class="field"><label>UID</label><input type="text" id="edit-acc-uid" value="${escapeHtml(acc.uid)}"></div>
             <div class="field"><label>Castle Level</label><input type="number" id="edit-acc-castle" min="1" value="${acc.castleLevel||1}"></div>
           </div>
+          <div class="field"><label>Tags</label><input type="text" id="edit-acc-tags" value="${escapeHtml((acc.tags||[]).join(', '))}" placeholder="comma-separated, e.g. R5, Whale"></div>
           <div class="btn-row">
             <button class="btn btn-secondary" onclick="cancelEditAccount()">Cancel</button>
             <button class="btn btn-primary" onclick="saveEditAccount('${escapeHtml(acc.uid)}')">Save</button>
@@ -1506,6 +1641,7 @@ function renderAccountsModal(){
             <div>
               <div class="account-name">${escapeHtml(acc.username)} ${acc.uid===activeUid?'· <span style="color:var(--accent-dark);">active</span>':''}</div>
               <div class="account-sub">${escapeHtml(acc.email||'no email')} · UID ${escapeHtml(acc.uid)} · Castle Lvl ${acc.castleLevel||1}</div>
+              ${(acc.tags && acc.tags.length) ? `<div class="account-sub">Tags: ${escapeHtml(acc.tags.join(', '))}</div>` : ''}
             </div>
             <div class="account-actions">
               <button class="link-btn" onclick="startEditAccount('${escapeHtml(acc.uid)}')">Edit</button>
@@ -1524,7 +1660,10 @@ function renderAccountsModal(){
       <div class="field"><label>Email</label><input type="email" id="new-acc-email" placeholder="optional"></div>
       <div class="field"><label>UID</label><input type="text" id="new-acc-uid" placeholder="unique ID"></div>
     </div>
-    <div class="field"><label>Castle Level</label><input type="number" id="new-acc-castle" min="1" value="1"></div>
+    <div class="field-row">
+      <div class="field"><label>Castle Level</label><input type="number" id="new-acc-castle" min="1" value="1"></div>
+      <div class="field"><label>Tags</label><input type="text" id="new-acc-tags" placeholder="e.g. R5, Whale"></div>
+    </div>
     <button class="btn btn-primary" onclick="addAccountManual()">Add account</button>`;
 
   inner += `<div class="divider"></div>`;
@@ -1532,7 +1671,8 @@ function renderAccountsModal(){
     <div class="upload-box">
       <label class="upload-label" for="csv-file">Choose a CSV or Excel file to import</label>
       <input type="file" id="csv-file" accept=".csv,text/csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" onchange="handleFileUpload(this)">
-      <div class="csv-format">Columns: Username, Email, UID, Castle Level</div>
+      <div class="csv-format">Columns: Username, Email, UID, Castle Level, Tags</div>
+      <div class="hint" style="margin-top:6px;">In the Tags column, separate multiple tags with a semicolon, e.g. R5;Whale</div>
     </div>`;
 
   inner += `<div class="divider"></div>`;
@@ -1544,53 +1684,73 @@ function renderAccountsModal(){
 }
 
 function renderEventModal(){
-  let inner = `<div class="sheet-header"><h3>New activity</h3><button class="sheet-close" onclick="closeModal()">Cancel</button></div>`;
+  const ev = editingEventId ? events.find(e=>e.id===editingEventId) : null;
+  const isEdit = !!ev;
+
+  let inner = `<div class="sheet-header"><h3>${isEdit?'Edit activity':'New activity'}</h3><button class="sheet-close" onclick="closeModal()">Cancel</button></div>`;
   inner += `
-    <div class="field"><label>Event name</label><input type="text" id="ev-name" placeholder="e.g. Morning stretch"></div>
+    <div class="field"><label>Event name</label><input type="text" id="ev-name" placeholder="e.g. Morning stretch" value="${isEdit?escapeHtml(ev.name):''}"></div>
     <div class="field-row">
       <div class="field">
         <label>Event type</label>
         <select id="ev-type" onchange="onEventTypeChange()">
-          <option value="daily">Daily</option>
-          <option value="weekly">Weekly</option>
-          <option value="special">Special Event</option>
+          <option value="daily" ${isEdit && ev.eventType==='daily'?'selected':''}>Daily</option>
+          <option value="weekly" ${isEdit && ev.eventType==='weekly'?'selected':''}>Weekly</option>
+          <option value="special" ${isEdit && ev.eventType==='special'?'selected':''}>Special Event</option>
+          <option value="ondemand" ${isEdit && ev.eventType==='ondemand'?'selected':''}>On Demand</option>
         </select>
       </div>
       <div class="field">
         <label>Tracking</label>
         <select id="ev-tracking">
-          <option value="daily">Daily</option>
-          <option value="once" selected>Once</option>
+          <option value="daily" ${isEdit && ev.tracking==='daily'?'selected':''}>Daily</option>
+          <option value="once" ${!isEdit || ev.tracking==='once'?'selected':''}>Once</option>
         </select>
       </div>
     </div>
     <div class="field" id="date-range-field">
       <label>Event duration</label>
       <div class="field-row">
-        <input type="date" id="ev-date-from" disabled>
-        <input type="date" id="ev-date-to" disabled>
+        <input type="date" id="ev-date-from" disabled value="${isEdit && ev.dateFrom ? ev.dateFrom : ''}">
+        <input type="date" id="ev-date-to" disabled value="${isEdit && ev.dateTo ? ev.dateTo : ''}">
       </div>
       <div class="hint">Only used for Special Events. The event is removed automatically the day after it ends.</div>
     </div>
+    <div class="field" id="cooldown-field">
+      <label>Cooldown (hours)</label>
+      <input type="number" id="ev-cooldown-hours" min="1" disabled value="${isEdit && ev.cooldownHours ? ev.cooldownHours : 8}">
+      <div class="hint">Only used for On Demand activities. Checking it off starts this countdown; it becomes available again once it expires. Not counted toward progress.</div>
+    </div>
     <div class="field">
       <label>Minimum Castle Level</label>
-      <input type="number" id="ev-min-castle" min="1" placeholder="Leave blank if anyone can do it">
+      <input type="number" id="ev-min-castle" min="1" placeholder="Leave blank if anyone can do it" value="${isEdit && ev.minCastleLevel ? ev.minCastleLevel : ''}">
       <div class="hint">Accounts below this level won't see this activity, and it won't count toward their progress.</div>
     </div>
-    <button class="btn btn-primary" onclick="submitNewEvent()">Add activity</button>
+    <div class="field">
+      <label>Required Tag</label>
+      <input type="text" id="ev-required-tag" placeholder="Leave blank if anyone can do it" value="${isEdit && ev.requiredTag ? escapeHtml(ev.requiredTag) : ''}">
+      <div class="hint">Only accounts with this exact tag (see Accounts) will see this activity. Independent of Castle Level — both can be set together.</div>
+    </div>
+    <button class="btn btn-primary" onclick="submitEventForm()">${isEdit?'Save changes':'Add activity'}</button>
+  `;
+
+  if(!isEdit){
+    inner += `
     <div class="divider"></div>
     <div class="section-label" style="margin-top:0;">Or import several from a file</div>
     <div class="upload-box">
       <label class="upload-label" for="activity-file">Choose a CSV or Excel file to import</label>
       <input type="file" id="activity-file" accept=".csv,text/csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" onchange="handleActivityFileUpload(this)">
-      <div class="csv-format">Columns: Name, Type (Daily / Weekly / Special Event), Tracking (Daily / Once), Date From, Date To, Min Castle Level</div>
-      <div class="hint" style="margin-top:6px;">Date From/To are only needed for Special Events. Leave Min Castle Level blank if anyone can do the activity.</div>
+      <div class="csv-format">Columns: Name, Type (Daily / Weekly / Special Event / On Demand), Tracking (Daily / Once), Date From, Date To, Min Castle Level, Required Tag</div>
+      <div class="hint" style="margin-top:6px;">Date From/To are only needed for Special Events. Leave Min Castle Level and/or Required Tag blank if anyone can do the activity. Imported On Demand rows default to an 8h cooldown — edit afterward to change it.</div>
     </div>
     <div class="divider"></div>
     <div class="section-label" style="margin-top:0;color:var(--danger);">Danger zone</div>
     <p class="hint" style="margin-bottom:10px;">Permanently deletes every activity, for every account, and clears related progress. This cannot be undone.</p>
     <button class="btn btn-danger-outline" onclick="deleteAllActivities()">Delete all activities</button>
-  `;
+    `;
+  }
+
   return `<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="sheet"><div class="sheet-handle"></div>${inner}</div></div>`;
 }
 
